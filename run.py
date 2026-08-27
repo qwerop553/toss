@@ -122,7 +122,7 @@ def cmd_compare(args):
                 "전략": name,
                 "종목": ticker,
                 "샤프": round(sharpe_ratio(result.returns), 2),
-                "MDD": round(max_drawdown(result.equity_curve), 4),
+                "MDD": round(max_drawdown(result.equity_curve, result.max_book_size), 4),
                 "승률": round(stats["win_rate"], 3),
                 "왕복": stats["round_trips"],
                 "순손익": round(result.equity_curve.iloc[-1], 0),

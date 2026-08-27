@@ -8,7 +8,7 @@ import pandas as pd
 import strategies
 from backtest_engine import run_backtest
 from grids import GRIDS, VALID
-from metrics import trade_stats
+from metrics import calmar_ratio, max_drawdown, trade_stats
 from print_summary import to_daily_summary
 from strategies.base import to_signals
 
@@ -173,6 +173,35 @@ def test_daily_summary_일별_손익():
     assert abs(daily["daily_pnl"].iloc[1] - 20.0) < 1e-9
     # 누적 컬럼은 그대로 살아 있어야 한다
     assert abs(daily["end_of_day_equity"].iloc[1] - 30.0) < 1e-9
+
+
+def test_max_drawdown_투입원금_대비():
+    # equity_curve는 자본이 아니라 0에서 시작하는 '누적 손익'이다.
+    # 예전처럼 running_max로 나누면 분모가 0을 지나가며 -inf가 나왔다.
+    # 투입원금(capital)으로 나눠야 종목 간 비교가 가능한 비율이 된다.
+    equity = pd.Series([0.0, 10.0, 5.0, 20.0, 8.0])
+    #  최고점 대비 낙폭: [0, 0, -5, 0, -12] -> 원금 100 기준 최악 -12%
+    assert abs(max_drawdown(equity, capital=100.0) - (-0.12)) < 1e-12
+
+
+def test_max_drawdown_손실만_난_경우도_유한():
+    # 처음부터 끝까지 손실이어도 -inf가 아니라 유한한 값이 나와야 한다
+    # (순위표에서 정렬 가능해야 하므로).
+    equity = pd.Series([0.0, -5.0, -20.0, -13.0])
+    mdd = max_drawdown(equity, capital=200.0)
+    assert mdd == -0.10          # 최고점 0 대비 -20 -> 200의 10%
+    assert pd.notna(mdd)
+
+
+def test_calmar_손익곡선에서_유한한_값():
+    # 예전 구현은 원화 손익을 그대로 거듭제곱해서 음수^분수 -> nan이었다.
+    # 원금 대비 수익률로 바꾼 뒤 연율화해야 한다.
+    equity = pd.Series([0.0, 10.0, 5.0, 20.0, 8.0])
+    returns = equity.diff().fillna(equity.iloc[0]) / 100.0
+    calmar = calmar_ratio(returns, equity, capital=100.0)
+    assert pd.notna(calmar)
+    # 수익이 났고 낙폭이 있으므로 양수여야 한다
+    assert calmar > 0
 
 
 def test_registry_전략을_이름으로_찾을_수_있다():

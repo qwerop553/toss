@@ -19,8 +19,9 @@ def print_summary(result: BacktestResult) -> None:
     # Risk / Return Metrics
     print(f"Sharpe Ratio     : {sharpe_ratio(result.returns):.2f}")
     print(f"Sortino Ratio    : {sortino_ratio(result.returns):.2f}")
-    print(f"MDD              : {max_drawdown(result.equity_curve):.2%}")
-    print(f"Calmar Ratio     : {calmar_ratio(result.returns, result.equity_curve):.2f}")
+    # MDD/Calmar는 투입원금(최대로 물렸던 금액) 대비로 낸다.
+    print(f"MDD              : {max_drawdown(result.equity_curve, result.max_book_size):.2%}")
+    print(f"Calmar Ratio     : {calmar_ratio(result.returns, result.equity_curve, result.max_book_size):.2f}")
     print("-" * 50)
     
     # Portfolio Metrics

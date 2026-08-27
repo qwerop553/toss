@@ -54,7 +54,7 @@ optimize.grid_search(...)             →  위 4단계를 파라미터 조합마
 
 **시간 기반 전략**은 분봉 전제다. `session_close.py`는 `timestamp` 컬럼을, `opening.py`는 DatetimeIndex로 변환해서 쓴다 — 두 전략이 인덱스를 다루는 방식이 다르니 참고할 때 주의. 일봉으로는 의미가 없다.
 
-**`metrics.max_drawdown`은 손익 곡선에 쓰면 `-inf`가 나온다.** `equity_curve`는 자본이 아니라 0 근처에서 시작하는 누적 손익이라 `(equity - running_max) / running_max`의 분모가 0에 가까워진다. 그래서 리포트의 MDD와 Calmar가 현재 `-inf` / `nan`이다. 아직 안 고쳤다.
+**`max_drawdown`과 `calmar_ratio`는 `capital` 인자를 요구한다.** `equity_curve`는 자본이 아니라 0에서 시작하는 누적 손익이라, 예전처럼 `running_max`로 나누면 분모가 0을 지나가며 `-inf`가 나왔다. 지금은 투입원금(`result.max_book_size`) 대비로 계산한다 — `result.returns`와 분모가 같아서 샤프와 기준이 맞는다. 호출할 때 `max_drawdown(result.equity_curve, result.max_book_size)` 형태로 넘겨라.
 
 ## 데이터
 

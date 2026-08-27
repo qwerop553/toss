@@ -17,11 +17,12 @@ class OptimizationResult:
     leaderboard: pd.DataFrame  # 모든 조합의 성능 비교, metric 기준 정렬됨
 
 
+# MDD/Calmar는 투입원금 대비로 계산하므로 result.max_book_size를 함께 넘긴다.
 _METRIC_FUNCS = {
     "sharpe": lambda r: sharpe_ratio(r.returns),
     "sortino": lambda r: sortino_ratio(r.returns),
-    "calmar": lambda r: calmar_ratio(r.returns, r.equity_curve),
-    "mdd": lambda r: -abs(max_drawdown(r.equity_curve)),  # MDD는 작을수록 좋으니 부호 반전
+    "calmar": lambda r: calmar_ratio(r.returns, r.equity_curve, r.max_book_size),
+    "mdd": lambda r: -abs(max_drawdown(r.equity_curve, r.max_book_size)),  # 작을수록 좋으니 부호 반전
 }
 
 
@@ -68,8 +69,8 @@ def grid_search(
             **params,
             "sharpe": sharpe_ratio(result.returns),
             "sortino": sortino_ratio(result.returns),
-            "mdd": max_drawdown(result.equity_curve),
-            "calmar": calmar_ratio(result.returns, result.equity_curve),
+            "mdd": max_drawdown(result.equity_curve, result.max_book_size),
+            "calmar": calmar_ratio(result.returns, result.equity_curve, result.max_book_size),
             "trade_count": result.trade_count,
             "net_pnl": result.equity_curve.iloc[-1],
         })
