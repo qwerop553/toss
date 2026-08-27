@@ -50,6 +50,8 @@ optimize.grid_search(...)             →  위 4단계를 파라미터 조합마
 
 **워밍업 구간**: 지표 기반 전략은 `__init__`에서 `self.warmup`을 설정한다 (보통 가장 긴 지표 기간). `ewm`과 `rolling`은 초기 구간이 신뢰할 수 없어 베이스가 그만큼 신호를 0으로 누른다.
 
+**지표의 백분위·기준선은 `expanding()`으로 계산한다.** `series.rank(pct=True)`나 `series.mean()`을 전체 구간에 걸면 아직 오지 않은 봉이 현재 봉의 값에 반영되어 lookahead bias가 생기고, 백테스트 성과가 실제보다 좋게 나온다. `ema_cross_with_adx`와 `ema_cross_with_atr` 둘 다 `atr.expanding().rank(pct=True)`와 `patr.expanding().mean().shift(1)`을 쓴다 — `shift(1)`은 기준선에서 현재 봉을 빼기 위한 것이다.
+
 **슬리피지가 비대칭**이다: 매수 0.015%, 매도 0.215%. 매도 쪽에 거래세가 들어가 있으니 한쪽만 바꾸지 마라.
 
 **시간 기반 전략**은 분봉 전제다. `session_close.py`는 `timestamp` 컬럼을, `opening.py`는 DatetimeIndex로 변환해서 쓴다 — 두 전략이 인덱스를 다루는 방식이 다르니 참고할 때 주의. 일봉으로는 의미가 없다.

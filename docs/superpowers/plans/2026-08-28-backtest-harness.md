@@ -1474,8 +1474,10 @@ git commit -m "docs: CLAUDE.md를 새 하네스에 맞게 갱신"
 
 ---
 
-## 미해결 관찰 (이번 범위 밖)
+## 미해결 관찰 (이번 범위 밖) — 이후 해결됨
 
-구현 중 마주치더라도 **고치지 말고 보고만 한다.** 백테스트 수치가 바뀌는 변경이고 이번 승인 범위 밖이다.
+`strategies/trend_following/ema_cross_with_atr.py`는 `patr = atr.rank(pct=True)`와 `patr_threshold = patr.mean()`을 썼다. 둘 다 **전체 구간**에 걸친 계산이라 아직 오지 않은 봉의 ATR을 순위와 평균에 반영하는 lookahead bias였다.
 
-`strategies/trend_following/ema_cross_with_atr.py`는 `patr = atr.rank(pct=True)`와 `patr_threshold = patr.mean()`을 쓴다. 둘 다 **전체 구간**에 걸친 계산이라 아직 오지 않은 봉의 ATR을 순위와 평균에 반영한다 — 전형적인 lookahead bias다. 이 전략의 백테스트 성과는 실제보다 좋게 나오고 있을 가능성이 높다. `ema_cross_with_adx`가 `expanding()`을 쓰는 것과 대조된다. 수정하려면 `atr.expanding().rank(pct=True)`와 `patr.expanding().mean().shift(1)`로 바꾸면 되지만, 성과 수치가 달라지므로 사용자 승인이 필요하다.
+계획 수립 시점에는 범위 밖으로 두었으나, 실행 후 사용자 승인을 받아 커밋 `517da9f`에서 `expanding()`으로 수정했다. test 구간 성과 변화: 005930은 변동 없음(달라진 14봉이 전부 train 구간), 000660은 승률 50.0% → 37.5%, 순손익 146,632원 → 140,365원.
+
+같은 커밋에서 MDD/Calmar가 `-inf`/`nan`으로 나오던 문제도 별도로 수정했다(`6f1cbd8`). 자세한 내용은 `CLAUDE.md`를 볼 것.
