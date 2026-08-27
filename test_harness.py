@@ -5,7 +5,9 @@
 """
 import pandas as pd
 
+import strategies
 from backtest_engine import run_backtest
+from grids import GRIDS, VALID
 from metrics import trade_stats
 from print_summary import to_daily_summary
 from strategies.base import to_signals
@@ -171,6 +173,33 @@ def test_daily_summary_일별_손익():
     assert abs(daily["daily_pnl"].iloc[1] - 20.0) < 1e-9
     # 누적 컬럼은 그대로 살아 있어야 한다
     assert abs(daily["end_of_day_equity"].iloc[1] - 30.0) < 1e-9
+
+
+def test_registry_전략을_이름으로_찾을_수_있다():
+    # CLI가 "EmaCrossStrategy" 같은 문자열로 클래스를 찾아야 한다.
+    assert "EmaCrossStrategy" in strategies.REGISTRY
+    assert "BollingerBandStrategy" in strategies.REGISTRY
+    # 베이스 클래스 자체는 실행 대상이 아니므로 들어 있으면 안 된다.
+    assert "Strategy" not in strategies.REGISTRY
+    # 레지스트리에 담긴 건 인스턴스가 아니라 클래스여야 한다.
+    assert isinstance(strategies.REGISTRY["EmaCrossStrategy"], type)
+
+
+def test_grids_키는_전부_실재하는_전략():
+    # 오타난 클래스명이 grids.py에 남아 있으면 --optimize가 조용히 건너뛴다.
+    for name in GRIDS:
+        assert name in strategies.REGISTRY, f"REGISTRY에 없는 전략: {name}"
+    for name in VALID:
+        assert name in GRIDS, f"VALID에만 있고 GRIDS에 없는 전략: {name}"
+
+
+def test_grids_파라미터명이_생성자와_일치():
+    # 그리드 키가 __init__ 인자와 다르면 grid_search가 TypeError로 죽는다.
+    import inspect
+    for name, grid in GRIDS.items():
+        params = inspect.signature(strategies.REGISTRY[name].__init__).parameters
+        for key in grid:
+            assert key in params, f"{name}에 없는 파라미터: {key}"
 
 
 def _run_all():

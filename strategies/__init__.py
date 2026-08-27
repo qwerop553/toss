@@ -13,7 +13,10 @@ from .base import Strategy
 
 # from strategies import * 을 하면 어떤 이름을 가져올지 알려준다.
 # __all__이 없다면 밑줄로 시작하지 않는 모든 이름을 가져온다.
-__all__ = ["Strategy"]
+__all__ = ["Strategy", "REGISTRY"]
+
+# 이름 -> 클래스. CLI가 "EmaCrossStrategy" 같은 문자열로 전략을 찾을 때 쓴다.
+REGISTRY: dict[str, type] = {}
 
 # 밑줄로 시작하여 import시 자동으로 제외됨
 _EXCLUDED = {"base", "registry"}
@@ -38,3 +41,5 @@ for module_info in pkgutil.walk_packages([str(_package_dir)], prefix=f"{__name__
             # 딕셔너리 형태의 전역 네임스페이스에 저장한다.
             __all__.append(name)
             # 해당 값을 __all__에 추가한다.
+            REGISTRY[name] = obj
+            # 이름으로 찾을 수 있게 레지스트리에도 넣는다 (run.py가 사용).
