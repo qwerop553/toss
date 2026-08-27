@@ -1,0 +1,16 @@
+{
+  "projectRoot": "C:/Users/sungwon/Desktop/Project/toss",
+  "batchFiles": [
+    {"path": ".claude/settings.json", "language": "json", "sizeLines": 5, "fileCategory": "config"},
+    {"path": "CLAUDE.md", "language": "markdown", "sizeLines": 69, "fileCategory": "docs"},
+    {"path": "docs/superpowers/plans/2026-08-28-backtest-harness.md", "language": "markdown", "sizeLines": 1483, "fileCategory": "docs"},
+    {"path": "docs/superpowers/specs/2026-08-28-backtest-harness-design.md", "language": "markdown", "sizeLines": 119, "fileCategory": "docs"},
+    {"path": "paper.ipynb", "language": "ipynb", "sizeLines": 91, "fileCategory": "code"},
+    {"path": "scrap.py", "language": "python", "sizeLines": 232, "fileCategory": "code"},
+    {"path": "snapshot_signals.py", "language": "python", "sizeLines": 100, "fileCategory": "code"},
+    {"path": "strategies/mean_reversion/__init__.py", "language": "python", "sizeLines": 0, "fileCategory": "code"},
+    {"path": "strategies/session_based/__init__.py", "language": "python", "sizeLines": 0, "fileCategory": "code"},
+    {"path": "strategies/trend_following/__init__.py", "language": "python", "sizeLines": 0, "fileCategory": "code"}
+  ],
+  "batchImportData": {".claude/settings.json": [], "CLAUDE.md": [], "docs/superpowers/plans/2026-08-28-backtest-harness.md": [], "docs/superpowers/specs/2026-08-28-backtest-harness-design.md": [], "paper.ipynb": [], "scrap.py": [], "snapshot_signals.py": ["scrap.py"], "strategies/mean_reversion/__init__.py": [], "strategies/session_based/__init__.py": [], "strategies/trend_following/__init__.py": []}
+}

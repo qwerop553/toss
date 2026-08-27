@@ -1,0 +1,455 @@
+{
+  "schemaVersion": 1,
+  "algorithm": "louvain",
+  "totalFiles": 27,
+  "totalBatches": 3,
+  "exportsByPath": {
+    "backtest_engine.py": [
+      "BacktestResult",
+      "run_backtest"
+    ],
+    "grids.py": [],
+    "metrics.py": [
+      "sharpe_ratio",
+      "sortino_ratio",
+      "max_drawdown",
+      "calmar_ratio",
+      "trade_stats"
+    ],
+    "optimize.py": [
+      "OptimizationResult",
+      "grid_search"
+    ],
+    "paper.ipynb": [],
+    "print_summary.py": [
+      "print_summary",
+      "plot_backtest",
+      "to_daily_summary"
+    ],
+    "run.py": [
+      "run_one",
+      "cmd_single",
+      "cmd_compare",
+      "main"
+    ],
+    "scrap.py": [
+      "update_candles",
+      "update_multiple",
+      "load_candles",
+      "get_last_timestamp",
+      "_get_access_token",
+      "_issue_token",
+      "_get_conn",
+      "_init_db",
+      "_fetch_page",
+      "_main"
+    ],
+    "snapshot_signals.py": [
+      "_load",
+      "_path",
+      "capture",
+      "verify",
+      "_cases",
+      "main"
+    ],
+    "strategies/__init__.py": [],
+    "strategies/base.py": [
+      "to_signals",
+      "Strategy"
+    ],
+    "strategies/mean_reversion/__init__.py": [],
+    "strategies/mean_reversion/bollinger_band.py": [
+      "BollingerBandStrategy"
+    ],
+    "strategies/mean_reversion/rsi_reversion.py": [
+      "RsiReversionStrategy"
+    ],
+    "strategies/session_based/__init__.py": [],
+    "strategies/session_based/opening.py": [
+      "OpeningRangeStrategy"
+    ],
+    "strategies/session_based/session_close.py": [
+      "SessionCloseStrategy"
+    ],
+    "strategies/trend_following/__init__.py": [],
+    "strategies/trend_following/ema_cross.py": [
+      "EmaCrossStrategy"
+    ],
+    "strategies/trend_following/ema_cross_with_adx.py": [
+      "EmaCrossStrategyWithADX"
+    ],
+    "strategies/trend_following/ema_cross_with_atr.py": [
+      "EmaCrossStrategyWithATR"
+    ],
+    "test_harness.py": [
+      "_s",
+      "test_to_signals_기본_왕복",
+      "test_to_signals_중복_진입_차단",
+      "test_to_signals_미보유_청산_무시",
+      "test_to_signals_워밍업_구간은_전부_0",
+      "test_to_signals_동시신호_결정1",
+      "test_to_signals_NaN은_False로_취급",
+      "test_to_signals_인덱스_보존",
+      "test_to_signals_인덱스_불일치는_에러",
+      "_candles",
+      "test_engine_fill_price_슬리피지_반영",
+      "test_trade_stats_손으로_계산한_값과_일치",
+      "test_trade_stats_미청산_포지션_분리",
+      "test_trade_stats_거래_없음",
+      "test_daily_summary_일별_손익",
+      "test_max_drawdown_투입원금_대비",
+      "test_max_drawdown_손실만_난_경우도_유한",
+      "test_calmar_손익곡선에서_유한한_값",
+      "test_registry_전략을_이름으로_찾을_수_있다",
+      "test_grids_키는_전부_실재하는_전략",
+      "test_grids_파라미터명이_생성자와_일치",
+      "_run_all"
+    ],
+    "validation.py": [
+      "walk_forward_split"
+    ]
+  },
+  "batches": [
+    {
+      "batchIndex": 1,
+      "files": [
+        {
+          "path": "backtest_engine.py",
+          "language": "python",
+          "sizeLines": 115,
+          "fileCategory": "code"
+        },
+        {
+          "path": "grids.py",
+          "language": "python",
+          "sizeLines": 42,
+          "fileCategory": "code"
+        },
+        {
+          "path": "metrics.py",
+          "language": "python",
+          "sizeLines": 112,
+          "fileCategory": "code"
+        },
+        {
+          "path": "optimize.py",
+          "language": "python",
+          "sizeLines": 88,
+          "fileCategory": "code"
+        },
+        {
+          "path": "print_summary.py",
+          "language": "python",
+          "sizeLines": 130,
+          "fileCategory": "code"
+        },
+        {
+          "path": "run.py",
+          "language": "python",
+          "sizeLines": 177,
+          "fileCategory": "code"
+        },
+        {
+          "path": "strategies/__init__.py",
+          "language": "python",
+          "sizeLines": 44,
+          "fileCategory": "code"
+        },
+        {
+          "path": "test_harness.py",
+          "language": "python",
+          "sizeLines": 245,
+          "fileCategory": "code"
+        },
+        {
+          "path": "validation.py",
+          "language": "python",
+          "sizeLines": 6,
+          "fileCategory": "code"
+        }
+      ],
+      "batchImportData": {
+        "backtest_engine.py": [],
+        "grids.py": [],
+        "metrics.py": [],
+        "optimize.py": [
+          "backtest_engine.py",
+          "metrics.py"
+        ],
+        "print_summary.py": [
+          "backtest_engine.py",
+          "metrics.py"
+        ],
+        "run.py": [
+          "backtest_engine.py",
+          "grids.py",
+          "metrics.py",
+          "optimize.py",
+          "print_summary.py",
+          "scrap.py",
+          "strategies/__init__.py",
+          "validation.py"
+        ],
+        "strategies/__init__.py": [
+          "strategies/base.py"
+        ],
+        "test_harness.py": [
+          "backtest_engine.py",
+          "grids.py",
+          "metrics.py",
+          "print_summary.py",
+          "strategies/__init__.py",
+          "strategies/base.py"
+        ],
+        "validation.py": []
+      },
+      "neighborMap": {
+        "run.py": [
+          {
+            "path": "scrap.py",
+            "batchIndex": 3,
+            "symbols": [
+              "update_candles",
+              "update_multiple",
+              "load_candles",
+              "get_last_timestamp",
+              "_get_access_token",
+              "_issue_token",
+              "_get_conn",
+              "_init_db",
+              "_fetch_page",
+              "_main"
+            ]
+          }
+        ],
+        "strategies/__init__.py": [
+          {
+            "path": "strategies/base.py",
+            "batchIndex": 2,
+            "symbols": [
+              "to_signals",
+              "Strategy"
+            ]
+          }
+        ],
+        "test_harness.py": [
+          {
+            "path": "strategies/base.py",
+            "batchIndex": 2,
+            "symbols": [
+              "to_signals",
+              "Strategy"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "batchIndex": 2,
+      "files": [
+        {
+          "path": "strategies/base.py",
+          "language": "python",
+          "sizeLines": 117,
+          "fileCategory": "code"
+        },
+        {
+          "path": "strategies/mean_reversion/bollinger_band.py",
+          "language": "python",
+          "sizeLines": 36,
+          "fileCategory": "code"
+        },
+        {
+          "path": "strategies/mean_reversion/rsi_reversion.py",
+          "language": "python",
+          "sizeLines": 38,
+          "fileCategory": "code"
+        },
+        {
+          "path": "strategies/session_based/opening.py",
+          "language": "python",
+          "sizeLines": 76,
+          "fileCategory": "code"
+        },
+        {
+          "path": "strategies/session_based/session_close.py",
+          "language": "python",
+          "sizeLines": 38,
+          "fileCategory": "code"
+        },
+        {
+          "path": "strategies/trend_following/ema_cross.py",
+          "language": "python",
+          "sizeLines": 36,
+          "fileCategory": "code"
+        },
+        {
+          "path": "strategies/trend_following/ema_cross_with_adx.py",
+          "language": "python",
+          "sizeLines": 56,
+          "fileCategory": "code"
+        },
+        {
+          "path": "strategies/trend_following/ema_cross_with_atr.py",
+          "language": "python",
+          "sizeLines": 83,
+          "fileCategory": "code"
+        }
+      ],
+      "batchImportData": {
+        "strategies/base.py": [],
+        "strategies/mean_reversion/bollinger_band.py": [
+          "strategies/base.py"
+        ],
+        "strategies/mean_reversion/rsi_reversion.py": [
+          "strategies/base.py"
+        ],
+        "strategies/session_based/opening.py": [
+          "strategies/base.py"
+        ],
+        "strategies/session_based/session_close.py": [
+          "strategies/base.py"
+        ],
+        "strategies/trend_following/ema_cross.py": [
+          "strategies/base.py"
+        ],
+        "strategies/trend_following/ema_cross_with_adx.py": [
+          "strategies/base.py"
+        ],
+        "strategies/trend_following/ema_cross_with_atr.py": [
+          "strategies/base.py"
+        ]
+      },
+      "neighborMap": {
+        "strategies/base.py": [
+          {
+            "path": "strategies/__init__.py",
+            "batchIndex": 1,
+            "symbols": []
+          },
+          {
+            "path": "test_harness.py",
+            "batchIndex": 1,
+            "symbols": [
+              "_s",
+              "test_to_signals_기본_왕복",
+              "test_to_signals_중복_진입_차단",
+              "test_to_signals_미보유_청산_무시",
+              "test_to_signals_워밍업_구간은_전부_0",
+              "test_to_signals_동시신호_결정1",
+              "test_to_signals_NaN은_False로_취급",
+              "test_to_signals_인덱스_보존",
+              "test_to_signals_인덱스_불일치는_에러",
+              "_candles",
+              "test_engine_fill_price_슬리피지_반영",
+              "test_trade_stats_손으로_계산한_값과_일치",
+              "test_trade_stats_미청산_포지션_분리",
+              "test_trade_stats_거래_없음",
+              "test_daily_summary_일별_손익",
+              "test_max_drawdown_투입원금_대비",
+              "test_max_drawdown_손실만_난_경우도_유한",
+              "test_calmar_손익곡선에서_유한한_값",
+              "test_registry_전략을_이름으로_찾을_수_있다",
+              "test_grids_키는_전부_실재하는_전략",
+              "test_grids_파라미터명이_생성자와_일치",
+              "_run_all"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "batchIndex": 3,
+      "files": [
+        {
+          "path": ".claude/settings.json",
+          "language": "json",
+          "sizeLines": 5,
+          "fileCategory": "config"
+        },
+        {
+          "path": "CLAUDE.md",
+          "language": "markdown",
+          "sizeLines": 69,
+          "fileCategory": "docs"
+        },
+        {
+          "path": "docs/superpowers/plans/2026-08-28-backtest-harness.md",
+          "language": "markdown",
+          "sizeLines": 1483,
+          "fileCategory": "docs"
+        },
+        {
+          "path": "docs/superpowers/specs/2026-08-28-backtest-harness-design.md",
+          "language": "markdown",
+          "sizeLines": 119,
+          "fileCategory": "docs"
+        },
+        {
+          "path": "paper.ipynb",
+          "language": "ipynb",
+          "sizeLines": 91,
+          "fileCategory": "code"
+        },
+        {
+          "path": "scrap.py",
+          "language": "python",
+          "sizeLines": 232,
+          "fileCategory": "code"
+        },
+        {
+          "path": "snapshot_signals.py",
+          "language": "python",
+          "sizeLines": 100,
+          "fileCategory": "code"
+        },
+        {
+          "path": "strategies/mean_reversion/__init__.py",
+          "language": "python",
+          "sizeLines": 0,
+          "fileCategory": "code"
+        },
+        {
+          "path": "strategies/session_based/__init__.py",
+          "language": "python",
+          "sizeLines": 0,
+          "fileCategory": "code"
+        },
+        {
+          "path": "strategies/trend_following/__init__.py",
+          "language": "python",
+          "sizeLines": 0,
+          "fileCategory": "code"
+        }
+      ],
+      "batchImportData": {
+        ".claude/settings.json": [],
+        "CLAUDE.md": [],
+        "docs/superpowers/plans/2026-08-28-backtest-harness.md": [],
+        "docs/superpowers/specs/2026-08-28-backtest-harness-design.md": [],
+        "paper.ipynb": [],
+        "scrap.py": [],
+        "snapshot_signals.py": [
+          "scrap.py"
+        ],
+        "strategies/mean_reversion/__init__.py": [],
+        "strategies/session_based/__init__.py": [],
+        "strategies/trend_following/__init__.py": []
+      },
+      "neighborMap": {
+        "scrap.py": [
+          {
+            "path": "run.py",
+            "batchIndex": 1,
+            "symbols": [
+              "run_one",
+              "cmd_single",
+              "cmd_compare",
+              "main"
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

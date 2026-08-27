@@ -1,0 +1,180 @@
+{
+  "projectRoot": "C:/Users/sungwon/Desktop/Project/toss",
+  "files": [
+    {
+      "path": ".claude/settings.json",
+      "language": "json",
+      "fileCategory": "config"
+    },
+    {
+      "path": ".ua/.understandignore",
+      "language": "unknown",
+      "fileCategory": "code"
+    },
+    {
+      "path": ".ua/config.json",
+      "language": "json",
+      "fileCategory": "config"
+    },
+    {
+      "path": "CLAUDE.md",
+      "language": "markdown",
+      "fileCategory": "docs"
+    },
+    {
+      "path": "backtest_engine.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "docs/superpowers/plans/2026-08-28-backtest-harness.md",
+      "language": "markdown",
+      "fileCategory": "docs"
+    },
+    {
+      "path": "docs/superpowers/specs/2026-08-28-backtest-harness-design.md",
+      "language": "markdown",
+      "fileCategory": "docs"
+    },
+    {
+      "path": "grids.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "market_data.db",
+      "language": "db",
+      "fileCategory": "code"
+    },
+    {
+      "path": "metrics.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "optimize.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "paper.ipynb",
+      "language": "ipynb",
+      "fileCategory": "code"
+    },
+    {
+      "path": "print_summary.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "run.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "scrap.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "snapshot_signals.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "strategies/__init__.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "strategies/base.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "strategies/mean_reversion/__init__.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "strategies/mean_reversion/bollinger_band.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "strategies/mean_reversion/rsi_reversion.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "strategies/session_based/__init__.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "strategies/session_based/opening.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "strategies/session_based/session_close.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "strategies/trend_following/__init__.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "strategies/trend_following/ema_cross.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "strategies/trend_following/ema_cross_with_adx.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "strategies/trend_following/ema_cross_with_atr.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "test_harness.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "tests_golden/adx.npy",
+      "language": "npy",
+      "fileCategory": "code"
+    },
+    {
+      "path": "tests_golden/bollinger.npy",
+      "language": "npy",
+      "fileCategory": "code"
+    },
+    {
+      "path": "tests_golden/opening.npy",
+      "language": "npy",
+      "fileCategory": "code"
+    },
+    {
+      "path": "tests_golden/rsi.npy",
+      "language": "npy",
+      "fileCategory": "code"
+    },
+    {
+      "path": "tests_golden/session_close.npy",
+      "language": "npy",
+      "fileCategory": "code"
+    },
+    {
+      "path": "validation.py",
+      "language": "python",
+      "fileCategory": "code"
+    }
+  ]
+}

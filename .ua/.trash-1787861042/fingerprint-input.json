@@ -1,0 +1,33 @@
+{
+  "projectRoot": "C:/Users/sungwon/Desktop/Project/toss",
+  "sourceFilePaths": [
+    ".claude/settings.json",
+    "CLAUDE.md",
+    "backtest_engine.py",
+    "docs/superpowers/plans/2026-08-28-backtest-harness.md",
+    "docs/superpowers/specs/2026-08-28-backtest-harness-design.md",
+    "grids.py",
+    "metrics.py",
+    "optimize.py",
+    "paper.ipynb",
+    "print_summary.py",
+    "run.py",
+    "scrap.py",
+    "snapshot_signals.py",
+    "strategies/__init__.py",
+    "strategies/base.py",
+    "strategies/mean_reversion/__init__.py",
+    "strategies/mean_reversion/bollinger_band.py",
+    "strategies/mean_reversion/rsi_reversion.py",
+    "strategies/session_based/__init__.py",
+    "strategies/session_based/opening.py",
+    "strategies/session_based/session_close.py",
+    "strategies/trend_following/__init__.py",
+    "strategies/trend_following/ema_cross.py",
+    "strategies/trend_following/ema_cross_with_adx.py",
+    "strategies/trend_following/ema_cross_with_atr.py",
+    "test_harness.py",
+    "validation.py"
+  ],
+  "gitCommitHash": "68a78907fc4988f14ebb96d4eb09c438b0906ec2"
+}

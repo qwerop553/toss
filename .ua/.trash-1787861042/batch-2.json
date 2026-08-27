@@ -1,0 +1,281 @@
+{
+  "nodes": [
+    {
+      "id": "file:strategies/base.py",
+      "type": "file",
+      "name": "base.py",
+      "filePath": "strategies/base.py",
+      "summary": "모든 전략이 상속하는 Strategy 추상 베이스와 상태머신 변환기 to_signals를 정의한다. 전략은 entries/exits 불리언 조건식만 쓰고, 보유 상태 관리·중복 진입 차단·워밍업 절단은 이 파일이 한 번만 구현해 처리한다.",
+      "tags": ["strategy-base", "abstract-class", "state-machine", "signal-generation", "utility"],
+      "complexity": "moderate",
+      "languageNotes": "ABC 상속 + NotImplementedError 조합으로 '선언형(entries/exits) 또는 직접 구현(generate_signals)' 두 갈래를 허용한다. 클래스 속성 warmup을 인스턴스 속성이 가리는 파이썬 속성 조회 규칙을 기본값 메커니즘으로 쓴다."
+    },
+    {
+      "id": "function:strategies/base.py:to_signals",
+      "type": "function",
+      "name": "to_signals",
+      "filePath": "strategies/base.py",
+      "lineRange": [8, 54],
+      "summary": "진입/청산 불리언 Series를 백테스트 엔진이 먹는 {-1, 0, 1} 이벤트 신호로 변환한다. 보유 상태를 들고 도는 순차 루프로 최대 1주만 유지하며, 워밍업 구간은 0으로 누르고 동시 신호는 미보유 시 진입·보유 시 청산이 이기도록 처리한다.",
+      "tags": ["state-machine", "signal-generation", "core-contract", "utility"],
+      "complexity": "moderate",
+      "languageNotes": "보유 상태가 이전 봉에 의존해 벡터화가 자명하지 않아 의도적으로 순수 파이썬 루프를 남긴 자리다 (코드에 ponytail 주석으로 성능 상한과 업그레이드 경로가 명시되어 있다)."
+    },
+    {
+      "id": "class:strategies/base.py:Strategy",
+      "type": "class",
+      "name": "Strategy",
+      "filePath": "strategies/base.py",
+      "lineRange": [57, 117],
+      "summary": "전략 인터페이스를 규정하는 추상 베이스 클래스. 기본 generate_signals가 entries/exits를 to_signals 상태머신에 태우며, 인덱스 불일치를 미리 잡아 엔진이 .iloc으로 엉뚱한 봉과 짝짓는 사고를 막는다.",
+      "tags": ["abstract-class", "strategy-base", "interface", "validation"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:strategies/base.py:generate_signals",
+      "type": "function",
+      "name": "Strategy.generate_signals",
+      "filePath": "strategies/base.py",
+      "lineRange": [99, 117],
+      "summary": "엔진이 유일하게 바라보는 신호 생성 진입점. entries/exits를 호출해 인덱스 정합성을 검증한 뒤 to_signals로 넘겨 {-1, 0, 1} 신호를 만든다.",
+      "tags": ["interface", "signal-generation", "validation", "template-method"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:strategies/mean_reversion/bollinger_band.py",
+      "type": "file",
+      "name": "bollinger_band.py",
+      "filePath": "strategies/mean_reversion/bollinger_band.py",
+      "summary": "볼린저 밴드 기반 평균회귀 전략. 종가가 하단 밴드를 이탈하면 매수하고 중심선(또는 상단 밴드)으로 회귀하면 매도하며, rolling 창이 차기 전 구간은 warmup으로 막는다.",
+      "tags": ["strategy", "mean-reversion", "indicator", "declarative"],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:strategies/mean_reversion/bollinger_band.py:BollingerBandStrategy",
+      "type": "class",
+      "name": "BollingerBandStrategy",
+      "filePath": "strategies/mean_reversion/bollinger_band.py",
+      "lineRange": [5, 36],
+      "summary": "period·num_std로 밴드를 만들고 하단 터치를 진입, 중심선 또는 상단 밴드 도달을 청산으로 쓰는 선언형 전략. 밴드 계산은 _bands에 모아 entries와 exits가 공유한다.",
+      "tags": ["strategy", "mean-reversion", "bollinger-band", "declarative"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:strategies/mean_reversion/rsi_reversion.py",
+      "type": "file",
+      "name": "rsi_reversion.py",
+      "filePath": "strategies/mean_reversion/rsi_reversion.py",
+      "summary": "RSI 과매도 진입 / 중립선 회복 청산의 평균회귀 전략. ewm 기반 RSI를 직접 계산하고 워밍업 구간은 중립값 50으로 채워 신호가 새 나가지 않게 한다.",
+      "tags": ["strategy", "mean-reversion", "rsi", "indicator", "declarative"],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:strategies/mean_reversion/rsi_reversion.py:RsiReversionStrategy",
+      "type": "class",
+      "name": "RsiReversionStrategy",
+      "filePath": "strategies/mean_reversion/rsi_reversion.py",
+      "lineRange": [6, 39],
+      "summary": "period·oversold·exit_level 세 파라미터로 RSI 반전을 매매하는 선언형 전략. entries는 RSI가 과매도 이하일 때, exits는 exit_level 이상으로 회복했을 때 참이 된다.",
+      "tags": ["strategy", "mean-reversion", "rsi", "declarative"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:strategies/mean_reversion/rsi_reversion.py:_rsi",
+      "type": "function",
+      "name": "RsiReversionStrategy._rsi",
+      "filePath": "strategies/mean_reversion/rsi_reversion.py",
+      "lineRange": [21, 31],
+      "summary": "종가 차분을 상승분·하락분으로 나눠 ewm 평균을 낸 뒤 표준 RSI 공식으로 0~100 값을 계산한다. 분모가 0인 구간과 워밍업 미충족 구간은 중립값 50으로 대체한다.",
+      "tags": ["indicator", "rsi", "calculation", "utility"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:strategies/session_based/opening.py",
+      "type": "file",
+      "name": "opening.py",
+      "filePath": "strategies/session_based/opening.py",
+      "summary": "정규장 개장 봉에 매수하고 N분 뒤 봉에 매도하는 시간 기반 전략. 날짜별로 목표 시각에 가장 가까운 봉을 허용 오차 안에서 찾아 표시하며, 분봉 데이터를 전제로 한다.",
+      "tags": ["strategy", "session-based", "time-based", "intraday"],
+      "complexity": "moderate",
+      "languageNotes": "df의 원래 정수 인덱스를 유지한 채 timestamp 컬럼만 datetime으로 파싱한다 — 예전처럼 DatetimeIndex로 갈아끼우면 엔진의 .iloc 접근과 인덱스가 어긋난다."
+    },
+    {
+      "id": "class:strategies/session_based/opening.py:OpeningRangeStrategy",
+      "type": "class",
+      "name": "OpeningRangeStrategy",
+      "filePath": "strategies/session_based/opening.py",
+      "lineRange": [5, 76],
+      "summary": "market_open_time·hold_minutes로 개장 직후 보유 구간을 정의하는 선언형 전략. 진입 봉이나 청산 봉을 허용 오차 안에서 못 찾거나 순서가 뒤집힌 날은 통째로 거래하지 않는다.",
+      "tags": ["strategy", "session-based", "time-based", "declarative"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:strategies/session_based/opening.py:_marks",
+      "type": "function",
+      "name": "OpeningRangeStrategy._marks",
+      "filePath": "strategies/session_based/opening.py",
+      "lineRange": [22, 62],
+      "summary": "타임스탬프를 날짜별로 묶어 개장 봉과 청산 봉의 인덱스 라벨을 찾아 두 개의 불리언 Series로 표시한다. tz-aware 인덱스면 목표 시각도 같은 타임존으로 localize해 비교한다.",
+      "tags": ["time-based", "session-based", "calculation", "timezone"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:strategies/session_based/session_close.py",
+      "type": "file",
+      "name": "session_close.py",
+      "filePath": "strategies/session_based/session_close.py",
+      "summary": "정규장 마감 종가에 매수해 연장세션 마감에 매도하는 당일 청산 전략. 청산 봉이 데이터에 없을 때를 대비해 그날의 마지막 봉을 OR로 더해 오버나잇 보유를 원천 차단한다.",
+      "tags": ["strategy", "session-based", "time-based", "intraday"],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:strategies/session_based/session_close.py:SessionCloseStrategy",
+      "type": "class",
+      "name": "SessionCloseStrategy",
+      "filePath": "strategies/session_based/session_close.py",
+      "lineRange": [5, 38],
+      "summary": "entry_time·exit_time 봉을 각각 매수·매도 조건으로 삼는 선언형 전략. timestamp 컬럼에서 시각과 날짜를 뽑아 쓰며, 미보유 상태의 청산 조건은 베이스의 상태머신이 알아서 무시한다.",
+      "tags": ["strategy", "session-based", "time-based", "declarative"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:strategies/trend_following/ema_cross.py",
+      "type": "file",
+      "name": "ema_cross.py",
+      "filePath": "strategies/trend_following/ema_cross.py",
+      "summary": "지수이동평균 골든/데드 크로스 추세추종 전략. 정배열·역배열 상태의 diff로 크로스 전환 시점에만 신호를 내는 벡터화 구현이라 예외적으로 generate_signals를 직접 구현한다.",
+      "tags": ["strategy", "trend-following", "ema", "vectorized"],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:strategies/trend_following/ema_cross.py:EmaCrossStrategy",
+      "type": "class",
+      "name": "EmaCrossStrategy",
+      "filePath": "strategies/trend_following/ema_cross.py",
+      "lineRange": [4, 35],
+      "summary": "fast·slow 두 EMA의 교차로 매매하는 추세추종 전략. 상태 diff 방식이라 크로스 전환 봉에서만 신호가 나와 중복 진입이 구조적으로 발생하지 않는다.",
+      "tags": ["strategy", "trend-following", "ema", "vectorized"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:strategies/trend_following/ema_cross.py:generate_signals",
+      "type": "function",
+      "name": "EmaCrossStrategy.generate_signals",
+      "filePath": "strategies/trend_following/ema_cross.py",
+      "lineRange": [17, 35],
+      "summary": "빠른/느린 EMA의 정배열 여부를 ±1 상태로 만든 뒤 그 diff의 부호로 매수·매도 신호를 뽑는다. EMA 초기값이 신뢰할 수 없어 slow 기간만큼 앞부분 신호를 0으로 눌러 마무리한다.",
+      "tags": ["signal-generation", "trend-following", "ema", "vectorized"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:strategies/trend_following/ema_cross_with_adx.py",
+      "type": "file",
+      "name": "ema_cross_with_adx.py",
+      "filePath": "strategies/trend_following/ema_cross_with_adx.py",
+      "summary": "EMA 크로스에 ATR 변동성 필터를 얹은 전략. ATR 백분위가 그동안의 평균 이상일 때만 크로스를 받아들여, 시장이 충분히 움직일 때로 매매를 한정한다.",
+      "tags": ["strategy", "trend-following", "volatility-filter", "atr", "declarative"],
+      "complexity": "moderate",
+      "languageNotes": "백분위와 기준선을 모두 expanding()으로 계산해 lookahead bias를 막는다. 전체 구간에 rank(pct=True)나 mean()을 걸면 아직 오지 않은 봉이 현재 봉에 반영되어 백테스트 성과가 부풀려진다."
+    },
+    {
+      "id": "class:strategies/trend_following/ema_cross_with_adx.py:EmaCrossStrategyWithADX",
+      "type": "class",
+      "name": "EmaCrossStrategyWithADX",
+      "filePath": "strategies/trend_following/ema_cross_with_adx.py",
+      "lineRange": [5, 56],
+      "summary": "골든/데드 크로스에 'ATR 백분위 >= 누적 평균' 조건을 AND로 건 선언형 전략. warmup은 slow와 atr_period 중 큰 값으로 잡아 두 지표가 모두 익은 뒤에만 신호를 낸다.",
+      "tags": ["strategy", "trend-following", "volatility-filter", "atr", "declarative"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:strategies/trend_following/ema_cross_with_adx.py:_indicators",
+      "type": "function",
+      "name": "EmaCrossStrategyWithADX._indicators",
+      "filePath": "strategies/trend_following/ema_cross_with_adx.py",
+      "lineRange": [19, 46],
+      "summary": "크로스 전환값과 ATR 백분위, 그 누적 평균 기준선을 한 번에 계산해 entries/exits가 공유하게 한다. expanding().rank()와 expanding().mean().shift(1)로 미래를 보지 않으며, 예전의 O(n^2) 중첩 루프를 대체한다.",
+      "tags": ["indicator", "atr", "calculation", "lookahead-prevention"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:strategies/trend_following/ema_cross_with_atr.py",
+      "type": "file",
+      "name": "ema_cross_with_atr.py",
+      "filePath": "strategies/trend_following/ema_cross_with_atr.py",
+      "summary": "EMA 간격 비율·ATR 변동성·쿨다운·정배열 예외를 조합한 추세추종 전략. 쿨다운과 강제 청산처럼 진짜 순차 상태가 필요해 generate_signals를 직접 오버라이드하는 유일한 전략이다.",
+      "tags": ["strategy", "trend-following", "volatility-filter", "stateful", "cooldown"],
+      "complexity": "moderate",
+      "languageNotes": "베이스의 상태머신을 쓰지 않으므로 중복 진입 차단(holding 플래그)과 워밍업 절단을 스스로 책임진다. ATR 백분위와 기준선은 expanding()으로 계산해 lookahead bias를 피한다."
+    },
+    {
+      "id": "class:strategies/trend_following/ema_cross_with_atr.py:EmaCrossStrategyWithATR",
+      "type": "class",
+      "name": "EmaCrossStrategyWithATR",
+      "filePath": "strategies/trend_following/ema_cross_with_atr.py",
+      "lineRange": [4, 84],
+      "summary": "변동성이 죽으면 즉시 청산하되 단기 정배열이면 유예하는 전략. fast·slow·atr_period에 더해 최소 이평 간격과 쿨다운을 generate_signals 인자로 받는다.",
+      "tags": ["strategy", "trend-following", "volatility-filter", "stateful", "cooldown"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:strategies/trend_following/ema_cross_with_atr.py:generate_signals",
+      "type": "function",
+      "name": "EmaCrossStrategyWithATR.generate_signals",
+      "filePath": "strategies/trend_following/ema_cross_with_atr.py",
+      "lineRange": [14, 84],
+      "summary": "EMA·MA·ATR 백분위를 미리 계산한 뒤 봉 단위 루프로 보유 여부와 마지막 거래 시점을 추적하며 신호를 낸다. 변동성 축소 시 강제 청산, 쿨다운 내 재매매 금지, 이평 간격이 min_diff_pct를 넘어야 하는 노이즈 필터가 순서대로 적용된다.",
+      "tags": ["signal-generation", "stateful", "cooldown", "trend-following", "volatility-filter"],
+      "complexity": "complex"
+    }
+  ],
+  "edges": [
+    {"source": "file:strategies/mean_reversion/bollinger_band.py", "target": "file:strategies/base.py", "type": "imports", "direction": "forward", "weight": 0.7},
+    {"source": "file:strategies/mean_reversion/rsi_reversion.py", "target": "file:strategies/base.py", "type": "imports", "direction": "forward", "weight": 0.7},
+    {"source": "file:strategies/session_based/opening.py", "target": "file:strategies/base.py", "type": "imports", "direction": "forward", "weight": 0.7},
+    {"source": "file:strategies/session_based/session_close.py", "target": "file:strategies/base.py", "type": "imports", "direction": "forward", "weight": 0.7},
+    {"source": "file:strategies/trend_following/ema_cross.py", "target": "file:strategies/base.py", "type": "imports", "direction": "forward", "weight": 0.7},
+    {"source": "file:strategies/trend_following/ema_cross_with_adx.py", "target": "file:strategies/base.py", "type": "imports", "direction": "forward", "weight": 0.7},
+    {"source": "file:strategies/trend_following/ema_cross_with_atr.py", "target": "file:strategies/base.py", "type": "imports", "direction": "forward", "weight": 0.7},
+
+    {"source": "file:strategies/base.py", "target": "function:strategies/base.py:to_signals", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:strategies/base.py", "target": "class:strategies/base.py:Strategy", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:strategies/base.py", "target": "function:strategies/base.py:generate_signals", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:strategies/mean_reversion/bollinger_band.py", "target": "class:strategies/mean_reversion/bollinger_band.py:BollingerBandStrategy", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:strategies/mean_reversion/rsi_reversion.py", "target": "class:strategies/mean_reversion/rsi_reversion.py:RsiReversionStrategy", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:strategies/mean_reversion/rsi_reversion.py", "target": "function:strategies/mean_reversion/rsi_reversion.py:_rsi", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:strategies/session_based/opening.py", "target": "class:strategies/session_based/opening.py:OpeningRangeStrategy", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:strategies/session_based/opening.py", "target": "function:strategies/session_based/opening.py:_marks", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:strategies/session_based/session_close.py", "target": "class:strategies/session_based/session_close.py:SessionCloseStrategy", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:strategies/trend_following/ema_cross.py", "target": "class:strategies/trend_following/ema_cross.py:EmaCrossStrategy", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:strategies/trend_following/ema_cross.py", "target": "function:strategies/trend_following/ema_cross.py:generate_signals", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:strategies/trend_following/ema_cross_with_adx.py", "target": "class:strategies/trend_following/ema_cross_with_adx.py:EmaCrossStrategyWithADX", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:strategies/trend_following/ema_cross_with_adx.py", "target": "function:strategies/trend_following/ema_cross_with_adx.py:_indicators", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:strategies/trend_following/ema_cross_with_atr.py", "target": "class:strategies/trend_following/ema_cross_with_atr.py:EmaCrossStrategyWithATR", "type": "contains", "direction": "forward", "weight": 1.0},
+    {"source": "file:strategies/trend_following/ema_cross_with_atr.py", "target": "function:strategies/trend_following/ema_cross_with_atr.py:generate_signals", "type": "contains", "direction": "forward", "weight": 1.0},
+
+    {"source": "file:strategies/base.py", "target": "function:strategies/base.py:to_signals", "type": "exports", "direction": "forward", "weight": 0.8},
+    {"source": "file:strategies/base.py", "target": "class:strategies/base.py:Strategy", "type": "exports", "direction": "forward", "weight": 0.8},
+    {"source": "file:strategies/mean_reversion/bollinger_band.py", "target": "class:strategies/mean_reversion/bollinger_band.py:BollingerBandStrategy", "type": "exports", "direction": "forward", "weight": 0.8},
+    {"source": "file:strategies/mean_reversion/rsi_reversion.py", "target": "class:strategies/mean_reversion/rsi_reversion.py:RsiReversionStrategy", "type": "exports", "direction": "forward", "weight": 0.8},
+    {"source": "file:strategies/session_based/opening.py", "target": "class:strategies/session_based/opening.py:OpeningRangeStrategy", "type": "exports", "direction": "forward", "weight": 0.8},
+    {"source": "file:strategies/session_based/session_close.py", "target": "class:strategies/session_based/session_close.py:SessionCloseStrategy", "type": "exports", "direction": "forward", "weight": 0.8},
+    {"source": "file:strategies/trend_following/ema_cross.py", "target": "class:strategies/trend_following/ema_cross.py:EmaCrossStrategy", "type": "exports", "direction": "forward", "weight": 0.8},
+    {"source": "file:strategies/trend_following/ema_cross_with_adx.py", "target": "class:strategies/trend_following/ema_cross_with_adx.py:EmaCrossStrategyWithADX", "type": "exports", "direction": "forward", "weight": 0.8},
+    {"source": "file:strategies/trend_following/ema_cross_with_atr.py", "target": "class:strategies/trend_following/ema_cross_with_atr.py:EmaCrossStrategyWithATR", "type": "exports", "direction": "forward", "weight": 0.8},
+
+    {"source": "class:strategies/mean_reversion/bollinger_band.py:BollingerBandStrategy", "target": "class:strategies/base.py:Strategy", "type": "inherits", "direction": "forward", "weight": 0.9},
+    {"source": "class:strategies/mean_reversion/rsi_reversion.py:RsiReversionStrategy", "target": "class:strategies/base.py:Strategy", "type": "inherits", "direction": "forward", "weight": 0.9},
+    {"source": "class:strategies/session_based/opening.py:OpeningRangeStrategy", "target": "class:strategies/base.py:Strategy", "type": "inherits", "direction": "forward", "weight": 0.9},
+    {"source": "class:strategies/session_based/session_close.py:SessionCloseStrategy", "target": "class:strategies/base.py:Strategy", "type": "inherits", "direction": "forward", "weight": 0.9},
+    {"source": "class:strategies/trend_following/ema_cross.py:EmaCrossStrategy", "target": "class:strategies/base.py:Strategy", "type": "inherits", "direction": "forward", "weight": 0.9},
+    {"source": "class:strategies/trend_following/ema_cross_with_adx.py:EmaCrossStrategyWithADX", "target": "class:strategies/base.py:Strategy", "type": "inherits", "direction": "forward", "weight": 0.9},
+    {"source": "class:strategies/trend_following/ema_cross_with_atr.py:EmaCrossStrategyWithATR", "target": "class:strategies/base.py:Strategy", "type": "inherits", "direction": "forward", "weight": 0.9},
+
+    {"source": "function:strategies/base.py:generate_signals", "target": "function:strategies/base.py:to_signals", "type": "calls", "direction": "forward", "weight": 0.8},
+    {"source": "class:strategies/mean_reversion/rsi_reversion.py:RsiReversionStrategy", "target": "function:strategies/mean_reversion/rsi_reversion.py:_rsi", "type": "calls", "direction": "forward", "weight": 0.8},
+    {"source": "class:strategies/session_based/opening.py:OpeningRangeStrategy", "target": "function:strategies/session_based/opening.py:_marks", "type": "calls", "direction": "forward", "weight": 0.8},
+    {"source": "class:strategies/trend_following/ema_cross_with_adx.py:EmaCrossStrategyWithADX", "target": "function:strategies/trend_following/ema_cross_with_adx.py:_indicators", "type": "calls", "direction": "forward", "weight": 0.8},
+
+    {"source": "file:strategies/base.py", "target": "file:test_harness.py", "type": "tested_by", "direction": "forward", "weight": 0.5}
+  ]
+}

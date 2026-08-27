@@ -1,0 +1,253 @@
+{
+  "name": "toss",
+  "description": "토스증권 OpenAPI에서 한국 주식 분봉 캔들을 받아 SQLite에 적재하고, 전략을 갈아끼우며 백테스트와 그리드서치를 돌리는 파이썬 백테스팅 하네스다. 전략 자동 등록, walk-forward 검증, 지표 리포팅까지 갖췄으나 실매매(paper/live) 코드는 아직 없다.",
+  "languages": [
+    "json",
+    "markdown",
+    "python"
+  ],
+  "frameworks": [
+    "pandas",
+    "NumPy",
+    "Matplotlib",
+    "Requests",
+    "python-dotenv",
+    "SQLite"
+  ],
+  "files": [
+    {
+      "path": ".claude/settings.json",
+      "language": "json",
+      "sizeLines": 5,
+      "fileCategory": "config"
+    },
+    {
+      "path": "CLAUDE.md",
+      "language": "markdown",
+      "sizeLines": 69,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "backtest_engine.py",
+      "language": "python",
+      "sizeLines": 115,
+      "fileCategory": "code"
+    },
+    {
+      "path": "docs/superpowers/plans/2026-08-28-backtest-harness.md",
+      "language": "markdown",
+      "sizeLines": 1483,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "docs/superpowers/specs/2026-08-28-backtest-harness-design.md",
+      "language": "markdown",
+      "sizeLines": 119,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "grids.py",
+      "language": "python",
+      "sizeLines": 42,
+      "fileCategory": "code"
+    },
+    {
+      "path": "metrics.py",
+      "language": "python",
+      "sizeLines": 112,
+      "fileCategory": "code"
+    },
+    {
+      "path": "optimize.py",
+      "language": "python",
+      "sizeLines": 88,
+      "fileCategory": "code"
+    },
+    {
+      "path": "paper.ipynb",
+      "language": "ipynb",
+      "sizeLines": 91,
+      "fileCategory": "code"
+    },
+    {
+      "path": "print_summary.py",
+      "language": "python",
+      "sizeLines": 130,
+      "fileCategory": "code"
+    },
+    {
+      "path": "run.py",
+      "language": "python",
+      "sizeLines": 177,
+      "fileCategory": "code"
+    },
+    {
+      "path": "scrap.py",
+      "language": "python",
+      "sizeLines": 232,
+      "fileCategory": "code"
+    },
+    {
+      "path": "snapshot_signals.py",
+      "language": "python",
+      "sizeLines": 100,
+      "fileCategory": "code"
+    },
+    {
+      "path": "strategies/__init__.py",
+      "language": "python",
+      "sizeLines": 44,
+      "fileCategory": "code"
+    },
+    {
+      "path": "strategies/base.py",
+      "language": "python",
+      "sizeLines": 117,
+      "fileCategory": "code"
+    },
+    {
+      "path": "strategies/mean_reversion/__init__.py",
+      "language": "python",
+      "sizeLines": 0,
+      "fileCategory": "code"
+    },
+    {
+      "path": "strategies/mean_reversion/bollinger_band.py",
+      "language": "python",
+      "sizeLines": 36,
+      "fileCategory": "code"
+    },
+    {
+      "path": "strategies/mean_reversion/rsi_reversion.py",
+      "language": "python",
+      "sizeLines": 38,
+      "fileCategory": "code"
+    },
+    {
+      "path": "strategies/session_based/__init__.py",
+      "language": "python",
+      "sizeLines": 0,
+      "fileCategory": "code"
+    },
+    {
+      "path": "strategies/session_based/opening.py",
+      "language": "python",
+      "sizeLines": 76,
+      "fileCategory": "code"
+    },
+    {
+      "path": "strategies/session_based/session_close.py",
+      "language": "python",
+      "sizeLines": 38,
+      "fileCategory": "code"
+    },
+    {
+      "path": "strategies/trend_following/__init__.py",
+      "language": "python",
+      "sizeLines": 0,
+      "fileCategory": "code"
+    },
+    {
+      "path": "strategies/trend_following/ema_cross.py",
+      "language": "python",
+      "sizeLines": 36,
+      "fileCategory": "code"
+    },
+    {
+      "path": "strategies/trend_following/ema_cross_with_adx.py",
+      "language": "python",
+      "sizeLines": 56,
+      "fileCategory": "code"
+    },
+    {
+      "path": "strategies/trend_following/ema_cross_with_atr.py",
+      "language": "python",
+      "sizeLines": 83,
+      "fileCategory": "code"
+    },
+    {
+      "path": "test_harness.py",
+      "language": "python",
+      "sizeLines": 245,
+      "fileCategory": "code"
+    },
+    {
+      "path": "validation.py",
+      "language": "python",
+      "sizeLines": 6,
+      "fileCategory": "code"
+    }
+  ],
+  "totalFiles": 27,
+  "filteredByIgnore": 8,
+  "estimatedComplexity": "moderate",
+  "importMap": {
+    ".claude/settings.json": [],
+    "CLAUDE.md": [],
+    "backtest_engine.py": [],
+    "docs/superpowers/plans/2026-08-28-backtest-harness.md": [],
+    "docs/superpowers/specs/2026-08-28-backtest-harness-design.md": [],
+    "grids.py": [],
+    "metrics.py": [],
+    "optimize.py": [
+      "backtest_engine.py",
+      "metrics.py"
+    ],
+    "paper.ipynb": [],
+    "print_summary.py": [
+      "backtest_engine.py",
+      "metrics.py"
+    ],
+    "run.py": [
+      "backtest_engine.py",
+      "grids.py",
+      "metrics.py",
+      "optimize.py",
+      "print_summary.py",
+      "scrap.py",
+      "strategies/__init__.py",
+      "validation.py"
+    ],
+    "scrap.py": [],
+    "snapshot_signals.py": [
+      "scrap.py"
+    ],
+    "strategies/__init__.py": [
+      "strategies/base.py"
+    ],
+    "strategies/base.py": [],
+    "strategies/mean_reversion/__init__.py": [],
+    "strategies/mean_reversion/bollinger_band.py": [
+      "strategies/base.py"
+    ],
+    "strategies/mean_reversion/rsi_reversion.py": [
+      "strategies/base.py"
+    ],
+    "strategies/session_based/__init__.py": [],
+    "strategies/session_based/opening.py": [
+      "strategies/base.py"
+    ],
+    "strategies/session_based/session_close.py": [
+      "strategies/base.py"
+    ],
+    "strategies/trend_following/__init__.py": [],
+    "strategies/trend_following/ema_cross.py": [
+      "strategies/base.py"
+    ],
+    "strategies/trend_following/ema_cross_with_adx.py": [
+      "strategies/base.py"
+    ],
+    "strategies/trend_following/ema_cross_with_atr.py": [
+      "strategies/base.py"
+    ],
+    "test_harness.py": [
+      "backtest_engine.py",
+      "grids.py",
+      "metrics.py",
+      "print_summary.py",
+      "strategies/__init__.py",
+      "strategies/base.py"
+    ],
+    "validation.py": []
+  }
+}

@@ -1,0 +1,1411 @@
+{
+  "version": "1.0.0",
+  "gitCommitHash": "68a78907fc4988f14ebb96d4eb09c438b0906ec2",
+  "generatedAt": "2026-08-27T20:03:53.881Z",
+  "files": {
+    ".claude/settings.json": {
+      "filePath": ".claude/settings.json",
+      "contentHash": "af48c05fba0095e1ac0e00a78f735749d73c6416e2a526caa07d63e14c948993",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 6,
+      "hasStructuralAnalysis": true
+    },
+    "CLAUDE.md": {
+      "filePath": "CLAUDE.md",
+      "contentHash": "59c525a3444d7766789a244f92cc667973819709007724c49c804eeda19fef12",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 70,
+      "hasStructuralAnalysis": true
+    },
+    "backtest_engine.py": {
+      "filePath": "backtest_engine.py",
+      "contentHash": "85abe37818e31c71124ade6d8839f47392cb25f7c49bd2dffd35cf45f3065a82",
+      "functions": [
+        {
+          "name": "run_backtest",
+          "params": [
+            "df",
+            "signal",
+            "buy_slippage",
+            "sell_slippage"
+          ],
+          "returnType": "BacktestResult",
+          "exported": true,
+          "lineCount": 82
+        }
+      ],
+      "classes": [
+        {
+          "name": "BacktestResult",
+          "methods": [],
+          "properties": [
+            "equity_curve",
+            "gross_equity_curve",
+            "total_cost",
+            "holdings",
+            "max_book_size",
+            "trade_count",
+            "trades",
+            "returns",
+            "benchmark_pnl",
+            "benchmark_return_pct",
+            "benchmark_equity_curve"
+          ],
+          "exported": true,
+          "lineCount": 12
+        }
+      ],
+      "imports": [
+        {
+          "source": "dataclasses",
+          "specifiers": [
+            "dataclass"
+          ]
+        },
+        {
+          "source": "pandas",
+          "specifiers": [
+            "pd"
+          ]
+        },
+        {
+          "source": "matplotlib.pyplot",
+          "specifiers": [
+            "plt"
+          ]
+        },
+        {
+          "source": "matplotlib.font_manager",
+          "specifiers": [
+            "fm"
+          ]
+        }
+      ],
+      "exports": [
+        "BacktestResult",
+        "run_backtest"
+      ],
+      "totalLines": 116,
+      "hasStructuralAnalysis": true
+    },
+    "docs/superpowers/plans/2026-08-28-backtest-harness.md": {
+      "filePath": "docs/superpowers/plans/2026-08-28-backtest-harness.md",
+      "contentHash": "207beb2bf9ab5cafcd6e67e82cb2fac08257fa441d2e2c16f97c987240eb89ea",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 1484,
+      "hasStructuralAnalysis": true
+    },
+    "docs/superpowers/specs/2026-08-28-backtest-harness-design.md": {
+      "filePath": "docs/superpowers/specs/2026-08-28-backtest-harness-design.md",
+      "contentHash": "e0033af2b87e36989b864157fbeb2474ad9f8ebbddcdacd665ebec9cd97cb346",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 120,
+      "hasStructuralAnalysis": true
+    },
+    "grids.py": {
+      "filePath": "grids.py",
+      "contentHash": "9bd1fe39f71e2dcca19f88e46c5b29d9ab4d3f905452afb1658a45413997ecad",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 43,
+      "hasStructuralAnalysis": true
+    },
+    "metrics.py": {
+      "filePath": "metrics.py",
+      "contentHash": "5fcaf67f285b3bbfcc2fe3030ccd4ba4a5a1fffbd3a8d1db82a3e9b32df15ed4",
+      "functions": [
+        {
+          "name": "sharpe_ratio",
+          "params": [
+            "returns",
+            "periods_per_year"
+          ],
+          "returnType": "float",
+          "exported": true,
+          "lineCount": 4
+        },
+        {
+          "name": "sortino_ratio",
+          "params": [
+            "returns",
+            "periods_per_year"
+          ],
+          "returnType": "float",
+          "exported": true,
+          "lineCount": 5
+        },
+        {
+          "name": "max_drawdown",
+          "params": [
+            "equity_curve",
+            "capital"
+          ],
+          "returnType": "float",
+          "exported": true,
+          "lineCount": 15
+        },
+        {
+          "name": "calmar_ratio",
+          "params": [
+            "returns",
+            "equity_curve",
+            "capital",
+            "periods_per_year"
+          ],
+          "returnType": "float",
+          "exported": true,
+          "lineCount": 19
+        },
+        {
+          "name": "trade_stats",
+          "params": [
+            "trades"
+          ],
+          "returnType": "dict",
+          "exported": true,
+          "lineCount": 62
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "numpy",
+          "specifiers": [
+            "np"
+          ]
+        },
+        {
+          "source": "pandas",
+          "specifiers": [
+            "pd"
+          ]
+        }
+      ],
+      "exports": [
+        "sharpe_ratio",
+        "sortino_ratio",
+        "max_drawdown",
+        "calmar_ratio",
+        "trade_stats"
+      ],
+      "totalLines": 113,
+      "hasStructuralAnalysis": true
+    },
+    "optimize.py": {
+      "filePath": "optimize.py",
+      "contentHash": "0e2d5621ca3c4559ecaac091114d54f82e715c24dda5bc0945696dd56482f59d",
+      "functions": [
+        {
+          "name": "grid_search",
+          "params": [
+            "df",
+            "strategy_factory",
+            "param_grid",
+            "metric",
+            "buy_slippage",
+            "sell_slippage",
+            "valid_combo"
+          ],
+          "returnType": "OptimizationResult",
+          "exported": true,
+          "lineCount": 61
+        }
+      ],
+      "classes": [
+        {
+          "name": "OptimizationResult",
+          "methods": [],
+          "properties": [
+            "best_params",
+            "best_score",
+            "leaderboard"
+          ],
+          "exported": true,
+          "lineCount": 4
+        }
+      ],
+      "imports": [
+        {
+          "source": "dataclasses",
+          "specifiers": [
+            "dataclass"
+          ]
+        },
+        {
+          "source": "itertools",
+          "specifiers": [
+            "product"
+          ]
+        },
+        {
+          "source": "typing",
+          "specifiers": [
+            "Callable",
+            "Iterable"
+          ]
+        },
+        {
+          "source": "pandas",
+          "specifiers": [
+            "pd"
+          ]
+        },
+        {
+          "source": "backtest_engine",
+          "specifiers": [
+            "run_backtest"
+          ]
+        },
+        {
+          "source": "metrics",
+          "specifiers": [
+            "sharpe_ratio",
+            "sortino_ratio",
+            "max_drawdown",
+            "calmar_ratio"
+          ]
+        }
+      ],
+      "exports": [
+        "OptimizationResult",
+        "grid_search"
+      ],
+      "totalLines": 89,
+      "hasStructuralAnalysis": true
+    },
+    "paper.ipynb": {
+      "filePath": "paper.ipynb",
+      "contentHash": "96cbcf0a35dd66b4fd1630819b69e750ebacc48014bb8d6f5ba6ac5a545f735b",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 92,
+      "hasStructuralAnalysis": false
+    },
+    "print_summary.py": {
+      "filePath": "print_summary.py",
+      "contentHash": "874eb1237f5809c344f58391926f95f112df42e74724ef53f835758ebc93626f",
+      "functions": [
+        {
+          "name": "print_summary",
+          "params": [
+            "result"
+          ],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 42
+        },
+        {
+          "name": "plot_backtest",
+          "params": [
+            "df",
+            "result",
+            "title"
+          ],
+          "returnType": "plt.Figure",
+          "exported": true,
+          "lineCount": 37
+        },
+        {
+          "name": "to_daily_summary",
+          "params": [
+            "df",
+            "result"
+          ],
+          "returnType": "pd.DataFrame",
+          "exported": true,
+          "lineCount": 36
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "matplotlib.pyplot",
+          "specifiers": [
+            "plt"
+          ]
+        },
+        {
+          "source": "numpy",
+          "specifiers": [
+            "np"
+          ]
+        },
+        {
+          "source": "pandas",
+          "specifiers": [
+            "pd"
+          ]
+        },
+        {
+          "source": "backtest_engine",
+          "specifiers": [
+            "BacktestResult"
+          ]
+        },
+        {
+          "source": "metrics",
+          "specifiers": [
+            "sharpe_ratio",
+            "sortino_ratio",
+            "max_drawdown",
+            "calmar_ratio",
+            "trade_stats"
+          ]
+        }
+      ],
+      "exports": [
+        "print_summary",
+        "plot_backtest",
+        "to_daily_summary"
+      ],
+      "totalLines": 131,
+      "hasStructuralAnalysis": true
+    },
+    "run.py": {
+      "filePath": "run.py",
+      "contentHash": "c2217b50725c1de94a7ad3efcd5fd4980c99719c91fc7be0cb6a0826c7a3f399",
+      "functions": [
+        {
+          "name": "run_one",
+          "params": [
+            "name",
+            "ticker",
+            "interval",
+            "optimize",
+            "metric"
+          ],
+          "exported": true,
+          "lineCount": 42
+        },
+        {
+          "name": "cmd_single",
+          "params": [
+            "args"
+          ],
+          "exported": true,
+          "lineCount": 31
+        },
+        {
+          "name": "cmd_compare",
+          "params": [
+            "args"
+          ],
+          "exported": true,
+          "lineCount": 35
+        },
+        {
+          "name": "main",
+          "params": [],
+          "exported": true,
+          "lineCount": 33
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "argparse",
+          "specifiers": [
+            "argparse"
+          ]
+        },
+        {
+          "source": "os",
+          "specifiers": [
+            "os"
+          ]
+        },
+        {
+          "source": "pandas",
+          "specifiers": [
+            "pd"
+          ]
+        },
+        {
+          "source": "scrap",
+          "specifiers": [
+            "scrap"
+          ]
+        },
+        {
+          "source": "strategies",
+          "specifiers": [
+            "strategies"
+          ]
+        },
+        {
+          "source": "backtest_engine",
+          "specifiers": [
+            "run_backtest"
+          ]
+        },
+        {
+          "source": "grids",
+          "specifiers": [
+            "GRIDS",
+            "VALID"
+          ]
+        },
+        {
+          "source": "metrics",
+          "specifiers": [
+            "sharpe_ratio",
+            "max_drawdown",
+            "trade_stats"
+          ]
+        },
+        {
+          "source": "optimize",
+          "specifiers": [
+            "grid_search"
+          ]
+        },
+        {
+          "source": "print_summary",
+          "specifiers": [
+            "print_summary",
+            "plot_backtest",
+            "to_daily_summary"
+          ]
+        },
+        {
+          "source": "validation",
+          "specifiers": [
+            "walk_forward_split"
+          ]
+        }
+      ],
+      "exports": [
+        "run_one",
+        "cmd_single",
+        "cmd_compare",
+        "main"
+      ],
+      "totalLines": 179,
+      "hasStructuralAnalysis": true
+    },
+    "scrap.py": {
+      "filePath": "scrap.py",
+      "contentHash": "06c792c5ef70ea4d93bb3388ed6569f3fc00bae5f3ec8a2f0a0ea3bcd695454a",
+      "functions": [
+        {
+          "name": "update_candles",
+          "params": [
+            "ticker",
+            "interval",
+            "adjusted",
+            "db_path",
+            "max_pages",
+            "initial_bars"
+          ],
+          "returnType": "int",
+          "exported": true,
+          "lineCount": 55
+        },
+        {
+          "name": "update_multiple",
+          "params": [
+            "tickers",
+            "interval",
+            "adjusted",
+            "db_path"
+          ],
+          "returnType": "dict",
+          "exported": true,
+          "lineCount": 8
+        },
+        {
+          "name": "load_candles",
+          "params": [
+            "ticker",
+            "interval",
+            "db_path",
+            "start",
+            "end"
+          ],
+          "returnType": "pd.DataFrame",
+          "exported": true,
+          "lineCount": 23
+        },
+        {
+          "name": "get_last_timestamp",
+          "params": [
+            "conn",
+            "ticker",
+            "interval"
+          ],
+          "returnType": "Optional[str]",
+          "exported": true,
+          "lineCount": 6
+        },
+        {
+          "name": "_get_access_token",
+          "params": [],
+          "returnType": "str",
+          "exported": true,
+          "lineCount": 10
+        },
+        {
+          "name": "_issue_token",
+          "params": [],
+          "returnType": "tuple[str, int]",
+          "exported": true,
+          "lineCount": 26
+        },
+        {
+          "name": "_get_conn",
+          "params": [
+            "db_path"
+          ],
+          "returnType": "sqlite3.Connection",
+          "exported": true,
+          "lineCount": 4
+        },
+        {
+          "name": "_init_db",
+          "params": [
+            "conn"
+          ],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 19
+        },
+        {
+          "name": "_fetch_page",
+          "params": [
+            "ticker",
+            "interval",
+            "access_token",
+            "count",
+            "before",
+            "adjusted"
+          ],
+          "returnType": "tuple[list, Optional[str]]",
+          "exported": true,
+          "lineCount": 21
+        },
+        {
+          "name": "_main",
+          "params": [],
+          "exported": true,
+          "lineCount": 19
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "sqlite3",
+          "specifiers": [
+            "sqlite3"
+          ]
+        },
+        {
+          "source": "time",
+          "specifiers": [
+            "time"
+          ]
+        },
+        {
+          "source": "typing",
+          "specifiers": [
+            "Optional"
+          ]
+        },
+        {
+          "source": "pandas",
+          "specifiers": [
+            "pd"
+          ]
+        },
+        {
+          "source": "requests",
+          "specifiers": [
+            "requests"
+          ]
+        },
+        {
+          "source": "dotenv",
+          "specifiers": [
+            "load_dotenv"
+          ]
+        },
+        {
+          "source": "os",
+          "specifiers": [
+            "os"
+          ]
+        }
+      ],
+      "exports": [
+        "update_candles",
+        "update_multiple",
+        "load_candles",
+        "get_last_timestamp",
+        "_get_access_token",
+        "_issue_token",
+        "_get_conn",
+        "_init_db",
+        "_fetch_page",
+        "_main"
+      ],
+      "totalLines": 233,
+      "hasStructuralAnalysis": true
+    },
+    "snapshot_signals.py": {
+      "filePath": "snapshot_signals.py",
+      "contentHash": "72e868ca03073fef5e2f8e270d4ca6207aacd3bc0a5ce39332d5a466d7295af5",
+      "functions": [
+        {
+          "name": "_load",
+          "params": [],
+          "exported": true,
+          "lineCount": 9
+        },
+        {
+          "name": "_path",
+          "params": [
+            "name"
+          ],
+          "returnType": "Path",
+          "exported": true,
+          "lineCount": 2
+        },
+        {
+          "name": "capture",
+          "params": [
+            "name",
+            "strategy",
+            "df"
+          ],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 6
+        },
+        {
+          "name": "verify",
+          "params": [
+            "name",
+            "strategy",
+            "df"
+          ],
+          "returnType": "bool",
+          "exported": true,
+          "lineCount": 16
+        },
+        {
+          "name": "_cases",
+          "params": [],
+          "exported": true,
+          "lineCount": 15
+        },
+        {
+          "name": "main",
+          "params": [],
+          "exported": true,
+          "lineCount": 14
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "sys",
+          "specifiers": [
+            "sys"
+          ]
+        },
+        {
+          "source": "pathlib",
+          "specifiers": [
+            "Path"
+          ]
+        },
+        {
+          "source": "numpy",
+          "specifiers": [
+            "np"
+          ]
+        },
+        {
+          "source": "pandas",
+          "specifiers": [
+            "pd"
+          ]
+        },
+        {
+          "source": "scrap",
+          "specifiers": [
+            "scrap"
+          ]
+        }
+      ],
+      "exports": [
+        "_load",
+        "_path",
+        "capture",
+        "verify",
+        "_cases",
+        "main"
+      ],
+      "totalLines": 101,
+      "hasStructuralAnalysis": true
+    },
+    "strategies/__init__.py": {
+      "filePath": "strategies/__init__.py",
+      "contentHash": "81bca428fdcc3cefe072e780a4435374d68a6b698b9af29bd62b9e433a99e4d0",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "importlib",
+          "specifiers": [
+            "importlib"
+          ]
+        },
+        {
+          "source": "inspect",
+          "specifiers": [
+            "inspect"
+          ]
+        },
+        {
+          "source": "pkgutil",
+          "specifiers": [
+            "pkgutil"
+          ]
+        },
+        {
+          "source": "pathlib",
+          "specifiers": [
+            "Path"
+          ]
+        },
+        {
+          "source": ".base",
+          "specifiers": [
+            "Strategy"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 45,
+      "hasStructuralAnalysis": true
+    },
+    "strategies/base.py": {
+      "filePath": "strategies/base.py",
+      "contentHash": "f013682ea17fc42fa5d58c495956709bfb6091eb6faca6bd82b68dc72e51d45d",
+      "functions": [
+        {
+          "name": "to_signals",
+          "params": [
+            "entries",
+            "exits",
+            "warmup"
+          ],
+          "returnType": "pd.Series",
+          "exported": true,
+          "lineCount": 47
+        }
+      ],
+      "classes": [
+        {
+          "name": "Strategy",
+          "methods": [
+            "entries",
+            "exits",
+            "generate_signals"
+          ],
+          "properties": [
+            "warmup"
+          ],
+          "exported": true,
+          "lineCount": 61
+        }
+      ],
+      "imports": [
+        {
+          "source": "abc",
+          "specifiers": [
+            "ABC"
+          ]
+        },
+        {
+          "source": "numpy",
+          "specifiers": [
+            "np"
+          ]
+        },
+        {
+          "source": "pandas",
+          "specifiers": [
+            "pd"
+          ]
+        }
+      ],
+      "exports": [
+        "to_signals",
+        "Strategy"
+      ],
+      "totalLines": 118,
+      "hasStructuralAnalysis": true
+    },
+    "strategies/mean_reversion/__init__.py": {
+      "filePath": "strategies/mean_reversion/__init__.py",
+      "contentHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 1,
+      "hasStructuralAnalysis": true
+    },
+    "strategies/mean_reversion/bollinger_band.py": {
+      "filePath": "strategies/mean_reversion/bollinger_band.py",
+      "contentHash": "50385be07298fa559f5da30de3ccd753da78be2c59f927f5f4f20d134c1d3fd5",
+      "functions": [],
+      "classes": [
+        {
+          "name": "BollingerBandStrategy",
+          "methods": [
+            "__init__",
+            "_bands",
+            "entries",
+            "exits"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 32
+        }
+      ],
+      "imports": [
+        {
+          "source": "..base",
+          "specifiers": [
+            "Strategy"
+          ]
+        },
+        {
+          "source": "pandas",
+          "specifiers": [
+            "pd"
+          ]
+        }
+      ],
+      "exports": [
+        "BollingerBandStrategy"
+      ],
+      "totalLines": 37,
+      "hasStructuralAnalysis": true
+    },
+    "strategies/mean_reversion/rsi_reversion.py": {
+      "filePath": "strategies/mean_reversion/rsi_reversion.py",
+      "contentHash": "e20d3a7e91090195b50a50f3cb1ae4336c18c9c846b352ea326218a3933e4581",
+      "functions": [],
+      "classes": [
+        {
+          "name": "RsiReversionStrategy",
+          "methods": [
+            "__init__",
+            "_rsi",
+            "entries",
+            "exits"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 34
+        }
+      ],
+      "imports": [
+        {
+          "source": "..base",
+          "specifiers": [
+            "Strategy"
+          ]
+        },
+        {
+          "source": "pandas",
+          "specifiers": [
+            "pd"
+          ]
+        },
+        {
+          "source": "numpy",
+          "specifiers": [
+            "np"
+          ]
+        }
+      ],
+      "exports": [
+        "RsiReversionStrategy"
+      ],
+      "totalLines": 39,
+      "hasStructuralAnalysis": true
+    },
+    "strategies/session_based/__init__.py": {
+      "filePath": "strategies/session_based/__init__.py",
+      "contentHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 1,
+      "hasStructuralAnalysis": true
+    },
+    "strategies/session_based/opening.py": {
+      "filePath": "strategies/session_based/opening.py",
+      "contentHash": "9d554035b8756ac0475f950afd918e3a8f59165817b6706d1cce913ee0b0152e",
+      "functions": [],
+      "classes": [
+        {
+          "name": "OpeningRangeStrategy",
+          "methods": [
+            "__init__",
+            "_marks",
+            "_first_at_or_after",
+            "entries",
+            "exits"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 72
+        }
+      ],
+      "imports": [
+        {
+          "source": "..base",
+          "specifiers": [
+            "Strategy"
+          ]
+        },
+        {
+          "source": "pandas",
+          "specifiers": [
+            "pd"
+          ]
+        }
+      ],
+      "exports": [
+        "OpeningRangeStrategy"
+      ],
+      "totalLines": 77,
+      "hasStructuralAnalysis": true
+    },
+    "strategies/session_based/session_close.py": {
+      "filePath": "strategies/session_based/session_close.py",
+      "contentHash": "3c0a59285c3f075ba89697fcd6f750c67f4783d0bdb24d724f2bb309d297b7d9",
+      "functions": [],
+      "classes": [
+        {
+          "name": "SessionCloseStrategy",
+          "methods": [
+            "__init__",
+            "_times",
+            "entries",
+            "exits"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 34
+        }
+      ],
+      "imports": [
+        {
+          "source": "..base",
+          "specifiers": [
+            "Strategy"
+          ]
+        },
+        {
+          "source": "pandas",
+          "specifiers": [
+            "pd"
+          ]
+        }
+      ],
+      "exports": [
+        "SessionCloseStrategy"
+      ],
+      "totalLines": 39,
+      "hasStructuralAnalysis": true
+    },
+    "strategies/trend_following/__init__.py": {
+      "filePath": "strategies/trend_following/__init__.py",
+      "contentHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 1,
+      "hasStructuralAnalysis": true
+    },
+    "strategies/trend_following/ema_cross.py": {
+      "filePath": "strategies/trend_following/ema_cross.py",
+      "contentHash": "c2400fcf5682d0a07f0d83d86a864d9477858759874e6e288ac0b957ce6c48a6",
+      "functions": [],
+      "classes": [
+        {
+          "name": "EmaCrossStrategy",
+          "methods": [
+            "__init__",
+            "generate_signals"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 32
+        }
+      ],
+      "imports": [
+        {
+          "source": "..base",
+          "specifiers": [
+            "Strategy"
+          ]
+        },
+        {
+          "source": "pandas",
+          "specifiers": [
+            "pd"
+          ]
+        }
+      ],
+      "exports": [
+        "EmaCrossStrategy"
+      ],
+      "totalLines": 37,
+      "hasStructuralAnalysis": true
+    },
+    "strategies/trend_following/ema_cross_with_adx.py": {
+      "filePath": "strategies/trend_following/ema_cross_with_adx.py",
+      "contentHash": "c3bf5f8999bc099fb46d436cbeca7ab356cd2911ffc3ed94b0b225c3b1cc41c9",
+      "functions": [],
+      "classes": [
+        {
+          "name": "EmaCrossStrategyWithADX",
+          "methods": [
+            "__init__",
+            "_indicators",
+            "entries",
+            "exits"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 52
+        }
+      ],
+      "imports": [
+        {
+          "source": "..base",
+          "specifiers": [
+            "Strategy"
+          ]
+        },
+        {
+          "source": "pandas",
+          "specifiers": [
+            "pd"
+          ]
+        }
+      ],
+      "exports": [
+        "EmaCrossStrategyWithADX"
+      ],
+      "totalLines": 57,
+      "hasStructuralAnalysis": true
+    },
+    "strategies/trend_following/ema_cross_with_atr.py": {
+      "filePath": "strategies/trend_following/ema_cross_with_atr.py",
+      "contentHash": "b473b4684c5ac223d287b75dfc22db2d801b633a5407e3b7281ef00e2369028b",
+      "functions": [],
+      "classes": [
+        {
+          "name": "EmaCrossStrategyWithATR",
+          "methods": [
+            "__init__",
+            "generate_signals"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 81
+        }
+      ],
+      "imports": [
+        {
+          "source": "..base",
+          "specifiers": [
+            "Strategy"
+          ]
+        },
+        {
+          "source": "pandas",
+          "specifiers": [
+            "pd"
+          ]
+        }
+      ],
+      "exports": [
+        "EmaCrossStrategyWithATR"
+      ],
+      "totalLines": 84,
+      "hasStructuralAnalysis": true
+    },
+    "test_harness.py": {
+      "filePath": "test_harness.py",
+      "contentHash": "e68944c159332c96edb327843107cbf648066619971ec2d670b77c715864e171",
+      "functions": [
+        {
+          "name": "_s",
+          "params": [
+            "values"
+          ],
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "test_to_signals_기본_왕복",
+          "params": [],
+          "exported": true,
+          "lineCount": 5
+        },
+        {
+          "name": "test_to_signals_중복_진입_차단",
+          "params": [],
+          "exported": true,
+          "lineCount": 6
+        },
+        {
+          "name": "test_to_signals_미보유_청산_무시",
+          "params": [],
+          "exported": true,
+          "lineCount": 5
+        },
+        {
+          "name": "test_to_signals_워밍업_구간은_전부_0",
+          "params": [],
+          "exported": true,
+          "lineCount": 5
+        },
+        {
+          "name": "test_to_signals_동시신호_결정1",
+          "params": [],
+          "exported": true,
+          "lineCount": 7
+        },
+        {
+          "name": "test_to_signals_NaN은_False로_취급",
+          "params": [],
+          "exported": true,
+          "lineCount": 5
+        },
+        {
+          "name": "test_to_signals_인덱스_보존",
+          "params": [],
+          "exported": true,
+          "lineCount": 7
+        },
+        {
+          "name": "test_to_signals_인덱스_불일치는_에러",
+          "params": [],
+          "exported": true,
+          "lineCount": 9
+        },
+        {
+          "name": "_candles",
+          "params": [
+            "closes"
+          ],
+          "exported": true,
+          "lineCount": 7
+        },
+        {
+          "name": "test_engine_fill_price_슬리피지_반영",
+          "params": [],
+          "exported": true,
+          "lineCount": 10
+        },
+        {
+          "name": "test_trade_stats_손으로_계산한_값과_일치",
+          "params": [],
+          "exported": true,
+          "lineCount": 20
+        },
+        {
+          "name": "test_trade_stats_미청산_포지션_분리",
+          "params": [],
+          "exported": true,
+          "lineCount": 12
+        },
+        {
+          "name": "test_trade_stats_거래_없음",
+          "params": [],
+          "exported": true,
+          "lineCount": 6
+        },
+        {
+          "name": "test_daily_summary_일별_손익",
+          "params": [],
+          "exported": true,
+          "lineCount": 25
+        },
+        {
+          "name": "test_max_drawdown_투입원금_대비",
+          "params": [],
+          "exported": true,
+          "lineCount": 7
+        },
+        {
+          "name": "test_max_drawdown_손실만_난_경우도_유한",
+          "params": [],
+          "exported": true,
+          "lineCount": 7
+        },
+        {
+          "name": "test_calmar_손익곡선에서_유한한_값",
+          "params": [],
+          "exported": true,
+          "lineCount": 9
+        },
+        {
+          "name": "test_registry_전략을_이름으로_찾을_수_있다",
+          "params": [],
+          "exported": true,
+          "lineCount": 8
+        },
+        {
+          "name": "test_grids_키는_전부_실재하는_전략",
+          "params": [],
+          "exported": true,
+          "lineCount": 6
+        },
+        {
+          "name": "test_grids_파라미터명이_생성자와_일치",
+          "params": [],
+          "exported": true,
+          "lineCount": 7
+        },
+        {
+          "name": "_run_all",
+          "params": [],
+          "exported": true,
+          "lineCount": 8
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "pandas",
+          "specifiers": [
+            "pd"
+          ]
+        },
+        {
+          "source": "strategies",
+          "specifiers": [
+            "strategies"
+          ]
+        },
+        {
+          "source": "backtest_engine",
+          "specifiers": [
+            "run_backtest"
+          ]
+        },
+        {
+          "source": "grids",
+          "specifiers": [
+            "GRIDS",
+            "VALID"
+          ]
+        },
+        {
+          "source": "metrics",
+          "specifiers": [
+            "calmar_ratio",
+            "max_drawdown",
+            "trade_stats"
+          ]
+        },
+        {
+          "source": "print_summary",
+          "specifiers": [
+            "to_daily_summary"
+          ]
+        },
+        {
+          "source": "strategies.base",
+          "specifiers": [
+            "to_signals"
+          ]
+        }
+      ],
+      "exports": [
+        "_s",
+        "test_to_signals_기본_왕복",
+        "test_to_signals_중복_진입_차단",
+        "test_to_signals_미보유_청산_무시",
+        "test_to_signals_워밍업_구간은_전부_0",
+        "test_to_signals_동시신호_결정1",
+        "test_to_signals_NaN은_False로_취급",
+        "test_to_signals_인덱스_보존",
+        "test_to_signals_인덱스_불일치는_에러",
+        "_candles",
+        "test_engine_fill_price_슬리피지_반영",
+        "test_trade_stats_손으로_계산한_값과_일치",
+        "test_trade_stats_미청산_포지션_분리",
+        "test_trade_stats_거래_없음",
+        "test_daily_summary_일별_손익",
+        "test_max_drawdown_투입원금_대비",
+        "test_max_drawdown_손실만_난_경우도_유한",
+        "test_calmar_손익곡선에서_유한한_값",
+        "test_registry_전략을_이름으로_찾을_수_있다",
+        "test_grids_키는_전부_실재하는_전략",
+        "test_grids_파라미터명이_생성자와_일치",
+        "_run_all"
+      ],
+      "totalLines": 246,
+      "hasStructuralAnalysis": true
+    },
+    "validation.py": {
+      "filePath": "validation.py",
+      "contentHash": "a6f03e32857e32186deea72fc85cd0cc921fdb9bb3407f893ada2bfe1320e9bf",
+      "functions": [
+        {
+          "name": "walk_forward_split",
+          "params": [
+            "df",
+            "train_ratio"
+          ],
+          "exported": true,
+          "lineCount": 5
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "pandas",
+          "specifiers": [
+            "pd"
+          ]
+        }
+      ],
+      "exports": [
+        "walk_forward_split"
+      ],
+      "totalLines": 7,
+      "hasStructuralAnalysis": true
+    }
+  }
+}

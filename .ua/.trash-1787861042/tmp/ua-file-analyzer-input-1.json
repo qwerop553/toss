@@ -1,0 +1,15 @@
+{
+  "projectRoot": "C:/Users/sungwon/Desktop/Project/toss",
+  "batchFiles": [
+    {"path": "backtest_engine.py", "language": "python", "sizeLines": 115, "fileCategory": "code"},
+    {"path": "grids.py", "language": "python", "sizeLines": 42, "fileCategory": "code"},
+    {"path": "metrics.py", "language": "python", "sizeLines": 112, "fileCategory": "code"},
+    {"path": "optimize.py", "language": "python", "sizeLines": 88, "fileCategory": "code"},
+    {"path": "print_summary.py", "language": "python", "sizeLines": 130, "fileCategory": "code"},
+    {"path": "run.py", "language": "python", "sizeLines": 177, "fileCategory": "code"},
+    {"path": "strategies/__init__.py", "language": "python", "sizeLines": 44, "fileCategory": "code"},
+    {"path": "test_harness.py", "language": "python", "sizeLines": 245, "fileCategory": "code"},
+    {"path": "validation.py", "language": "python", "sizeLines": 6, "fileCategory": "code"}
+  ],
+  "batchImportData": {"backtest_engine.py": [], "grids.py": [], "metrics.py": [], "optimize.py": ["backtest_engine.py", "metrics.py"], "print_summary.py": ["backtest_engine.py", "metrics.py"], "run.py": ["backtest_engine.py", "grids.py", "metrics.py", "optimize.py", "print_summary.py", "scrap.py", "strategies/__init__.py", "validation.py"], "strategies/__init__.py": ["strategies/base.py"], "test_harness.py": ["backtest_engine.py", "grids.py", "metrics.py", "print_summary.py", "strategies/__init__.py", "strategies/base.py"], "validation.py": []}
+}

@@ -1,0 +1,85 @@
+{
+  "scriptCompleted": true,
+  "stats": {
+    "filesScanned": 35,
+    "filesWithImports": 13,
+    "totalEdges": 27
+  },
+  "importMap": {
+    ".claude/settings.json": [],
+    ".ua/.understandignore": [],
+    ".ua/config.json": [],
+    "CLAUDE.md": [],
+    "backtest_engine.py": [],
+    "docs/superpowers/plans/2026-08-28-backtest-harness.md": [],
+    "docs/superpowers/specs/2026-08-28-backtest-harness-design.md": [],
+    "grids.py": [],
+    "market_data.db": [],
+    "metrics.py": [],
+    "optimize.py": [
+      "backtest_engine.py",
+      "metrics.py"
+    ],
+    "paper.ipynb": [],
+    "print_summary.py": [
+      "backtest_engine.py",
+      "metrics.py"
+    ],
+    "run.py": [
+      "backtest_engine.py",
+      "grids.py",
+      "metrics.py",
+      "optimize.py",
+      "print_summary.py",
+      "scrap.py",
+      "strategies/__init__.py",
+      "validation.py"
+    ],
+    "scrap.py": [],
+    "snapshot_signals.py": [
+      "scrap.py"
+    ],
+    "strategies/__init__.py": [
+      "strategies/base.py"
+    ],
+    "strategies/base.py": [],
+    "strategies/mean_reversion/__init__.py": [],
+    "strategies/mean_reversion/bollinger_band.py": [
+      "strategies/base.py"
+    ],
+    "strategies/mean_reversion/rsi_reversion.py": [
+      "strategies/base.py"
+    ],
+    "strategies/session_based/__init__.py": [],
+    "strategies/session_based/opening.py": [
+      "strategies/base.py"
+    ],
+    "strategies/session_based/session_close.py": [
+      "strategies/base.py"
+    ],
+    "strategies/trend_following/__init__.py": [],
+    "strategies/trend_following/ema_cross.py": [
+      "strategies/base.py"
+    ],
+    "strategies/trend_following/ema_cross_with_adx.py": [
+      "strategies/base.py"
+    ],
+    "strategies/trend_following/ema_cross_with_atr.py": [
+      "strategies/base.py"
+    ],
+    "test_harness.py": [
+      "backtest_engine.py",
+      "grids.py",
+      "metrics.py",
+      "print_summary.py",
+      "strategies/__init__.py",
+      "strategies/base.py"
+    ],
+    "tests_golden/adx.npy": [],
+    "tests_golden/bollinger.npy": [],
+    "tests_golden/opening.npy": [],
+    "tests_golden/rsi.npy": [],
+    "tests_golden/session_close.npy": [],
+    "validation.py": []
+  }
+}

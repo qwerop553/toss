@@ -1,0 +1,198 @@
+[
+ {
+  "id": "file:backtest_engine.py",
+  "name": "backtest_engine.py",
+  "filePath": "backtest_engine.py",
+  "summary": "신호 시리즈를 받아 1주 단위로 체결을 시뮬레이션하는 백테스트 엔진. 비대칭 슬리피지(매수 0.015% / 매도 0.215%)를 반영해 누적 손익, 보유량, 거래 원장, 벤치마크를 담은 BacktestResult를 만든다.",
+  "type": "file"
+ },
+ {
+  "id": "file:grids.py",
+  "name": "grids.py",
+  "filePath": "grids.py",
+  "summary": "전략별 그리드서치 탐색 범위(GRIDS)와 무효 조합 필터(VALID)를 모아 둔 선언적 설정 모듈. 전략 코드를 순수하게 유지하려고 어느 범위를 뒤질지만 이 파일 한 곳에 분리했다.",
+  "type": "file"
+ },
+ {
+  "id": "file:metrics.py",
+  "name": "metrics.py",
+  "filePath": "metrics.py",
+  "summary": "백테스트 결과를 평가하는 성과지표 모음. 샤프, 소르티노, MDD, 칼마 비율과 거래 통계(승률, 손익비, 미청산 포지션 분리)를 계산한다.",
+  "type": "file"
+ },
+ {
+  "id": "file:optimize.py",
+  "name": "optimize.py",
+  "filePath": "optimize.py",
+  "summary": "전략에 종속되지 않는 범용 그리드서치 모듈. 파라미터 조합마다 전략을 만들어 백테스트를 돌리고, 선택한 지표 기준으로 정렬된 순위표와 최적 파라미터를 돌려준다.",
+  "type": "file"
+ },
+ {
+  "id": "file:print_summary.py",
+  "name": "print_summary.py",
+  "filePath": "print_summary.py",
+  "summary": "백테스트 결과를 사람이 읽는 형태로 뽑아 주는 리포팅 모듈. 콘솔 요약 출력, matplotlib 손익/보유량 그래프, 일별 집계 DataFrame 세 가지를 제공한다.",
+  "type": "file"
+ },
+ {
+  "id": "file:run.py",
+  "name": "run.py",
+  "filePath": "run.py",
+  "summary": "실행, 자동 최적화, 전략 비교를 모두 담당하는 통합 CLI 진입점. 캔들 로드에서 walk-forward 분할, 신호 생성, 백테스트, 리포트까지 이어지는 파이프라인을 argparse 플래그로 제어한다.",
+  "type": "file"
+ },
+ {
+  "id": "file:strategies/__init__.py",
+  "name": "__init__.py",
+  "filePath": "strategies/__init__.py",
+  "summary": "strategies 패키지의 전략 자동 등록 barrel. pkgutil.walk_packages로 하위 모듈을 전부 훑어 Strategy 서브클래스를 globals(), __all__, REGISTRY에 동적으로 밀어넣는다.",
+  "type": "file"
+ },
+ {
+  "id": "file:test_harness.py",
+  "name": "test_harness.py",
+  "filePath": "test_harness.py",
+  "summary": "pytest 없이 assert만으로 하네스 전체를 검증하는 자체 검사 스크립트. 신호 상태머신, 슬리피지 체결가, 거래 통계, 일별 집계, MDD/칼마 유한성, 전략 레지스트리, 그리드 정합성을 훑는다.",
+  "type": "file"
+ },
+ {
+  "id": "file:validation.py",
+  "name": "validation.py",
+  "filePath": "validation.py",
+  "summary": "시계열 데이터를 train/test로 시간 순서대로 자르는 walk-forward 분할 헬퍼. 미래 구간이 학습에 섞이지 않도록 무작위 셔플 없이 앞뒤로만 나눈다.",
+  "type": "file"
+ },
+ {
+  "id": "file:strategies/base.py",
+  "name": "base.py",
+  "filePath": "strategies/base.py",
+  "summary": "모든 전략이 상속하는 Strategy 추상 베이스와 상태머신 변환기 to_signals를 정의한다. 전략은 entries/exits 불리언 조건식만 쓰고, 보유 상태 관리·중복 진입 차단·워밍업 절단은 이 파일이 한 번만 구현해 처리한다.",
+  "type": "file"
+ },
+ {
+  "id": "file:strategies/mean_reversion/bollinger_band.py",
+  "name": "bollinger_band.py",
+  "filePath": "strategies/mean_reversion/bollinger_band.py",
+  "summary": "볼린저 밴드 기반 평균회귀 전략. 종가가 하단 밴드를 이탈하면 매수하고 중심선(또는 상단 밴드)으로 회귀하면 매도하며, rolling 창이 차기 전 구간은 warmup으로 막는다.",
+  "type": "file"
+ },
+ {
+  "id": "file:strategies/mean_reversion/rsi_reversion.py",
+  "name": "rsi_reversion.py",
+  "filePath": "strategies/mean_reversion/rsi_reversion.py",
+  "summary": "RSI 과매도 진입 / 중립선 회복 청산의 평균회귀 전략. ewm 기반 RSI를 직접 계산하고 워밍업 구간은 중립값 50으로 채워 신호가 새 나가지 않게 한다.",
+  "type": "file"
+ },
+ {
+  "id": "file:strategies/session_based/opening.py",
+  "name": "opening.py",
+  "filePath": "strategies/session_based/opening.py",
+  "summary": "정규장 개장 봉에 매수하고 N분 뒤 봉에 매도하는 시간 기반 전략. 날짜별로 목표 시각에 가장 가까운 봉을 허용 오차 안에서 찾아 표시하며, 분봉 데이터를 전제로 한다.",
+  "type": "file"
+ },
+ {
+  "id": "file:strategies/session_based/session_close.py",
+  "name": "session_close.py",
+  "filePath": "strategies/session_based/session_close.py",
+  "summary": "정규장 마감 종가에 매수해 연장세션 마감에 매도하는 당일 청산 전략. 청산 봉이 데이터에 없을 때를 대비해 그날의 마지막 봉을 OR로 더해 오버나잇 보유를 원천 차단한다.",
+  "type": "file"
+ },
+ {
+  "id": "file:strategies/trend_following/ema_cross.py",
+  "name": "ema_cross.py",
+  "filePath": "strategies/trend_following/ema_cross.py",
+  "summary": "지수이동평균 골든/데드 크로스 추세추종 전략. 정배열·역배열 상태의 diff로 크로스 전환 시점에만 신호를 내는 벡터화 구현이라 예외적으로 generate_signals를 직접 구현한다.",
+  "type": "file"
+ },
+ {
+  "id": "file:strategies/trend_following/ema_cross_with_adx.py",
+  "name": "ema_cross_with_adx.py",
+  "filePath": "strategies/trend_following/ema_cross_with_adx.py",
+  "summary": "EMA 크로스에 ATR 변동성 필터를 얹은 전략. ATR 백분위가 그동안의 평균 이상일 때만 크로스를 받아들여, 시장이 충분히 움직일 때로 매매를 한정한다.",
+  "type": "file"
+ },
+ {
+  "id": "file:strategies/trend_following/ema_cross_with_atr.py",
+  "name": "ema_cross_with_atr.py",
+  "filePath": "strategies/trend_following/ema_cross_with_atr.py",
+  "summary": "EMA 간격 비율·ATR 변동성·쿨다운·정배열 예외를 조합한 추세추종 전략. 쿨다운과 강제 청산처럼 진짜 순차 상태가 필요해 generate_signals를 직접 오버라이드하는 유일한 전략이다.",
+  "type": "file"
+ },
+ {
+  "id": "config:.claude/settings.json",
+  "name": "settings.json",
+  "filePath": ".claude/settings.json",
+  "summary": "Claude Code 프로젝트 설정 파일로, 이 리포에서 활성화할 플러그인 목록(enabledPlugins) 하나만 지정한다. 백테스팅 런타임과는 무관한 개발 도구 설정이다.",
+  "type": "config"
+ },
+ {
+  "id": "document:CLAUDE.md",
+  "name": "CLAUDE.md",
+  "filePath": "CLAUDE.md",
+  "summary": "이 프로젝트의 사실상 유일한 README이자 아키텍처 문서로, 실행 커맨드·데이터 파이프라인 4단계·전략 인터페이스 계약·슬리피지와 워밍업 같은 함정·SQLite 스키마를 7개 섹션에 정리한다. 신규 작업자가 가장 먼저 읽어야 할 진입점이다.",
+  "type": "document"
+ },
+ {
+  "id": "document:docs/superpowers/plans/2026-08-28-backtest-harness.md",
+  "name": "2026-08-28-backtest-harness.md",
+  "filePath": "docs/superpowers/plans/2026-08-28-backtest-harness.md",
+  "summary": "백테스팅 하네스 재설계의 단계별 실행 계획서로, 상태머신 to_signals() 도입부터 트레이드 통계·리포트 확장·전략 5종 마이그레이션·전략 레지스트리·통합 CLI run.py까지 8개 Task를 코드 스니펫과 검증 절차까지 붙여 1483줄로 기술한다.",
+  "type": "document"
+ },
+ {
+  "id": "document:docs/superpowers/specs/2026-08-28-backtest-harness-design.md",
+  "name": "2026-08-28-backtest-harness-design.md",
+  "filePath": "docs/superpowers/specs/2026-08-28-backtest-harness-design.md",
+  "summary": "위 실행 계획의 상위 설계 명세로, 문제 정의·범위 제외 항목·접근 방식을 먼저 못 박은 뒤 상태머신(strategies/base.py), 트레이드 통계(backtest_engine·metrics), CLI(run.py·grids.py), 마이그레이션, 검증 체크를 5개 축으로 설계한다.",
+  "type": "document"
+ },
+ {
+  "id": "file:paper.ipynb",
+  "name": "paper.ipynb",
+  "filePath": "paper.ipynb",
+  "summary": "실매매(paper trading)를 위한 빈 스케치 노트북이다. 4개 셀 중 실질 내용은 scrap.load_candles로 005930 1분봉을 불러오고 timestamp 포맷팅을 시도하다 만 미완성 두 줄뿐이며, 동작하는 매매 로직은 아직 없다.",
+  "type": "file"
+ },
+ {
+  "id": "file:scrap.py",
+  "name": "scrap.py",
+  "filePath": "scrap.py",
+  "summary": "토스증권 OpenAPI에서 분봉 캔들을 페이지 단위로 받아 SQLite(market_data.db)의 candles 테이블에 INSERT OR IGNORE로 증분 적재하고, load_candles로 다시 DataFrame으로 읽어 주는 데이터 수집 계층이자 전체 파이프라인의 진입점이다. OAuth 토큰 발급·캐시도 이 모듈이 자체 처리한다.",
+  "type": "file"
+ },
+ {
+  "id": "file:snapshot_signals.py",
+  "name": "snapshot_signals.py",
+  "filePath": "snapshot_signals.py",
+  "summary": "전략 리팩터링의 안전망 역할을 하는 골든 스냅샷 도구다. capture 모드로 실데이터 기준 전략 5종의 신호 배열을 tests_golden/에 .npy로 떠 두고, verify 모드로 리팩터링 후 신호가 한 비트도 바뀌지 않았는지 대조한다. 수익성이 아니라 행동 불변만 검증한다.",
+  "type": "file"
+ },
+ {
+  "id": "table:scrap.py:candles",
+  "name": "candles",
+  "filePath": "scrap.py",
+  "summary": "market_data.db의 유일한 테이블로 OHLCV 분봉을 저장한다. PK가 (ticker, timeframe, timestamp)라 INSERT OR IGNORE 증분 수집을 몇 번 재실행해도 중복이 쌓이지 않으며, 동일 컬럼 조합의 조회용 인덱스도 함께 생성된다.",
+  "type": "table"
+ },
+ {
+  "id": "file:strategies/mean_reversion/__init__.py",
+  "name": "__init__.py",
+  "filePath": "strategies/mean_reversion/__init__.py",
+  "summary": "평균회귀 계열 전략 패키지의 마커 파일이다. 내용은 비어 있지만 strategies/__init__.py의 pkgutil.walk_packages 자동 등록이 이 하위 패키지를 훑으려면 반드시 존재해야 한다.",
+  "type": "file"
+ },
+ {
+  "id": "file:strategies/session_based/__init__.py",
+  "name": "__init__.py",
+  "filePath": "strategies/session_based/__init__.py",
+  "summary": "장 시간 기반 전략 패키지의 마커 파일이다. 내용은 비어 있지만 strategies/__init__.py의 pkgutil.walk_packages 자동 등록이 동작하려면 기능적으로 필수다.",
+  "type": "file"
+ },
+ {
+  "id": "file:strategies/trend_following/__init__.py",
+  "name": "__init__.py",
+  "filePath": "strategies/trend_following/__init__.py",
+  "summary": "추세추종 계열 전략 패키지의 마커 파일이다. 내용은 비어 있지만 strategies/__init__.py의 pkgutil.walk_packages 자동 등록이 이 폴더를 인식하려면 반드시 있어야 한다.",
+  "type": "file"
+ }
+]

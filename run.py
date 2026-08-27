@@ -49,6 +49,7 @@ def run_one(name: str, ticker: str, interval: str, optimize: bool, metric: str):
     params: dict = {}
     leaderboard = None
 
+    # optimize가 True이고 name이 GRID에 있으면
     if optimize and name in GRIDS:
         opt = grid_search(
             train,

@@ -1,0 +1,2218 @@
+{
+  "scriptCompleted": true,
+  "filesAnalyzed": 9,
+  "filesSkipped": [],
+  "analysisOutcomes": {
+    "structure": {
+      "succeeded": 9,
+      "failed": 0
+    },
+    "callGraph": {
+      "succeeded": 9,
+      "failed": 0,
+      "skipped": 0
+    }
+  },
+  "results": [
+    {
+      "path": "backtest_engine.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 115,
+      "nonEmptyLines": 91,
+      "functions": [
+        {
+          "name": "run_backtest",
+          "startLine": 31,
+          "endLine": 112,
+          "params": [
+            "df",
+            "signal",
+            "buy_slippage",
+            "sell_slippage"
+          ]
+        }
+      ],
+      "classes": [
+        {
+          "name": "BacktestResult",
+          "startLine": 17,
+          "endLine": 28,
+          "methods": [],
+          "properties": [
+            "equity_curve",
+            "gross_equity_curve",
+            "total_cost",
+            "holdings",
+            "max_book_size",
+            "trade_count",
+            "trades",
+            "returns",
+            "benchmark_pnl",
+            "benchmark_return_pct",
+            "benchmark_equity_curve"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "BacktestResult",
+          "line": 16,
+          "isDefault": false
+        },
+        {
+          "name": "run_backtest",
+          "line": 31,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "run_backtest",
+          "callee": "range",
+          "lineNumber": 38
+        },
+        {
+          "caller": "run_backtest",
+          "callee": "len",
+          "lineNumber": 38
+        },
+        {
+          "caller": "run_backtest",
+          "callee": "trades.append",
+          "lineNumber": 51
+        },
+        {
+          "caller": "run_backtest",
+          "callee": "trades.append",
+          "lineNumber": 58
+        },
+        {
+          "caller": "run_backtest",
+          "callee": "cash_flow.append",
+          "lineNumber": 62
+        },
+        {
+          "caller": "run_backtest",
+          "callee": "holdings_series.append",
+          "lineNumber": 63
+        },
+        {
+          "caller": "run_backtest",
+          "callee": "cost_series.append",
+          "lineNumber": 64
+        },
+        {
+          "caller": "run_backtest",
+          "callee": "pd.Series",
+          "lineNumber": 66
+        },
+        {
+          "caller": "run_backtest",
+          "callee": "pd.Series",
+          "lineNumber": 67
+        },
+        {
+          "caller": "run_backtest",
+          "callee": "pd.Series",
+          "lineNumber": 68
+        },
+        {
+          "caller": "run_backtest",
+          "callee": "cash_flow.cumsum",
+          "lineNumber": 70
+        },
+        {
+          "caller": "run_backtest",
+          "callee": "cost_series.sum",
+          "lineNumber": 76
+        },
+        {
+          "caller": "run_backtest",
+          "callee": "cost_series.cumsum",
+          "lineNumber": 79
+        },
+        {
+          "caller": "run_backtest",
+          "callee": "(holdings_series * df[\"close\"]).max",
+          "lineNumber": 81
+        },
+        {
+          "caller": "run_backtest",
+          "callee": "pd.isna",
+          "lineNumber": 82
+        },
+        {
+          "caller": "run_backtest",
+          "callee": "equity_curve.diff().fillna",
+          "lineNumber": 85
+        },
+        {
+          "caller": "run_backtest",
+          "callee": "equity_curve.diff",
+          "lineNumber": 85
+        },
+        {
+          "caller": "run_backtest",
+          "callee": "BacktestResult",
+          "lineNumber": 100
+        },
+        {
+          "caller": "run_backtest",
+          "callee": "len",
+          "lineNumber": 106
+        },
+        {
+          "caller": "run_backtest",
+          "callee": "pd.DataFrame",
+          "lineNumber": 107
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 2,
+        "functionCount": 1,
+        "classCount": 1
+      }
+    },
+    {
+      "path": "grids.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 42,
+      "nonEmptyLines": 37,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "metrics.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 112,
+      "nonEmptyLines": 92,
+      "functions": [
+        {
+          "name": "sharpe_ratio",
+          "startLine": 4,
+          "endLine": 7,
+          "params": [
+            "returns",
+            "periods_per_year"
+          ]
+        },
+        {
+          "name": "sortino_ratio",
+          "startLine": 9,
+          "endLine": 13,
+          "params": [
+            "returns",
+            "periods_per_year"
+          ]
+        },
+        {
+          "name": "max_drawdown",
+          "startLine": 15,
+          "endLine": 29,
+          "params": [
+            "equity_curve",
+            "capital"
+          ]
+        },
+        {
+          "name": "calmar_ratio",
+          "startLine": 31,
+          "endLine": 49,
+          "params": [
+            "returns",
+            "equity_curve",
+            "capital",
+            "periods_per_year"
+          ]
+        },
+        {
+          "name": "trade_stats",
+          "startLine": 51,
+          "endLine": 112,
+          "params": [
+            "trades"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "sharpe_ratio",
+          "line": 4,
+          "isDefault": false
+        },
+        {
+          "name": "sortino_ratio",
+          "line": 9,
+          "isDefault": false
+        },
+        {
+          "name": "max_drawdown",
+          "line": 15,
+          "isDefault": false
+        },
+        {
+          "name": "calmar_ratio",
+          "line": 31,
+          "isDefault": false
+        },
+        {
+          "name": "trade_stats",
+          "line": 51,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "sharpe_ratio",
+          "callee": "returns.std",
+          "lineNumber": 5
+        },
+        {
+          "caller": "sharpe_ratio",
+          "callee": "returns.mean",
+          "lineNumber": 7
+        },
+        {
+          "caller": "sharpe_ratio",
+          "callee": "returns.std",
+          "lineNumber": 7
+        },
+        {
+          "caller": "sharpe_ratio",
+          "callee": "np.sqrt",
+          "lineNumber": 7
+        },
+        {
+          "caller": "sortino_ratio",
+          "callee": "downside.std",
+          "lineNumber": 11
+        },
+        {
+          "caller": "sortino_ratio",
+          "callee": "returns.mean",
+          "lineNumber": 13
+        },
+        {
+          "caller": "sortino_ratio",
+          "callee": "downside.std",
+          "lineNumber": 13
+        },
+        {
+          "caller": "sortino_ratio",
+          "callee": "np.sqrt",
+          "lineNumber": 13
+        },
+        {
+          "caller": "max_drawdown",
+          "callee": "equity_curve.cummax",
+          "lineNumber": 28
+        },
+        {
+          "caller": "max_drawdown",
+          "callee": "float",
+          "lineNumber": 29
+        },
+        {
+          "caller": "max_drawdown",
+          "callee": "((equity_curve - running_max) / capital).min",
+          "lineNumber": 29
+        },
+        {
+          "caller": "calmar_ratio",
+          "callee": "len",
+          "lineNumber": 47
+        },
+        {
+          "caller": "calmar_ratio",
+          "callee": "abs",
+          "lineNumber": 48
+        },
+        {
+          "caller": "calmar_ratio",
+          "callee": "max_drawdown",
+          "lineNumber": 48
+        },
+        {
+          "caller": "calmar_ratio",
+          "callee": "float",
+          "lineNumber": 49
+        },
+        {
+          "caller": "trade_stats",
+          "callee": "trades[trades[\"side\"] == \"buy\"].reset_index",
+          "lineNumber": 76
+        },
+        {
+          "caller": "trade_stats",
+          "callee": "trades[trades[\"side\"] == \"sell\"].reset_index",
+          "lineNumber": 77
+        },
+        {
+          "caller": "trade_stats",
+          "callee": "min",
+          "lineNumber": 79
+        },
+        {
+          "caller": "trade_stats",
+          "callee": "len",
+          "lineNumber": 79
+        },
+        {
+          "caller": "trade_stats",
+          "callee": "len",
+          "lineNumber": 79
+        },
+        {
+          "caller": "trade_stats",
+          "callee": "len",
+          "lineNumber": 80
+        },
+        {
+          "caller": "trade_stats",
+          "callee": "buys[\"fill_price\"].to_numpy",
+          "lineNumber": 85
+        },
+        {
+          "caller": "trade_stats",
+          "callee": "sells[\"fill_price\"].to_numpy",
+          "lineNumber": 86
+        },
+        {
+          "caller": "trade_stats",
+          "callee": "pnl[pnl > 0].sum",
+          "lineNumber": 94
+        },
+        {
+          "caller": "trade_stats",
+          "callee": "pnl[pnl <= 0].sum",
+          "lineNumber": 95
+        },
+        {
+          "caller": "trade_stats",
+          "callee": "sells[\"position\"].to_numpy",
+          "lineNumber": 97
+        },
+        {
+          "caller": "trade_stats",
+          "callee": "buys[\"position\"].to_numpy",
+          "lineNumber": 97
+        },
+        {
+          "caller": "trade_stats",
+          "callee": "int",
+          "lineNumber": 100
+        },
+        {
+          "caller": "trade_stats",
+          "callee": "float",
+          "lineNumber": 101
+        },
+        {
+          "caller": "trade_stats",
+          "callee": "len",
+          "lineNumber": 101
+        },
+        {
+          "caller": "trade_stats",
+          "callee": "float",
+          "lineNumber": 102
+        },
+        {
+          "caller": "trade_stats",
+          "callee": "ret.mean",
+          "lineNumber": 102
+        },
+        {
+          "caller": "trade_stats",
+          "callee": "float",
+          "lineNumber": 103
+        },
+        {
+          "caller": "trade_stats",
+          "callee": "ret.std",
+          "lineNumber": 103
+        },
+        {
+          "caller": "trade_stats",
+          "callee": "float",
+          "lineNumber": 104
+        },
+        {
+          "caller": "trade_stats",
+          "callee": "ret.var",
+          "lineNumber": 104
+        },
+        {
+          "caller": "trade_stats",
+          "callee": "float",
+          "lineNumber": 105
+        },
+        {
+          "caller": "trade_stats",
+          "callee": "wins.mean",
+          "lineNumber": 105
+        },
+        {
+          "caller": "trade_stats",
+          "callee": "len",
+          "lineNumber": 105
+        },
+        {
+          "caller": "trade_stats",
+          "callee": "float",
+          "lineNumber": 106
+        },
+        {
+          "caller": "trade_stats",
+          "callee": "losses.mean",
+          "lineNumber": 106
+        },
+        {
+          "caller": "trade_stats",
+          "callee": "len",
+          "lineNumber": 106
+        },
+        {
+          "caller": "trade_stats",
+          "callee": "float",
+          "lineNumber": 109
+        },
+        {
+          "caller": "trade_stats",
+          "callee": "float",
+          "lineNumber": 110
+        },
+        {
+          "caller": "trade_stats",
+          "callee": "holding_bars.mean",
+          "lineNumber": 110
+        },
+        {
+          "caller": "trade_stats",
+          "callee": "int",
+          "lineNumber": 111
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 5,
+        "functionCount": 5,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "optimize.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 89,
+      "nonEmptyLines": 72,
+      "functions": [
+        {
+          "name": "grid_search",
+          "startLine": 29,
+          "endLine": 89,
+          "params": [
+            "df",
+            "strategy_factory",
+            "param_grid",
+            "metric",
+            "buy_slippage",
+            "sell_slippage",
+            "valid_combo"
+          ]
+        }
+      ],
+      "classes": [
+        {
+          "name": "OptimizationResult",
+          "startLine": 14,
+          "endLine": 17,
+          "methods": [],
+          "properties": [
+            "best_params",
+            "best_score",
+            "leaderboard"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "OptimizationResult",
+          "line": 13,
+          "isDefault": false
+        },
+        {
+          "name": "grid_search",
+          "line": 29,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "grid_search",
+          "callee": "ValueError",
+          "lineNumber": 47
+        },
+        {
+          "caller": "grid_search",
+          "callee": "list",
+          "lineNumber": 47
+        },
+        {
+          "caller": "grid_search",
+          "callee": "list",
+          "lineNumber": 50
+        },
+        {
+          "caller": "grid_search",
+          "callee": "param_grid.keys",
+          "lineNumber": 50
+        },
+        {
+          "caller": "grid_search",
+          "callee": "list",
+          "lineNumber": 51
+        },
+        {
+          "caller": "grid_search",
+          "callee": "product",
+          "lineNumber": 51
+        },
+        {
+          "caller": "grid_search",
+          "callee": "param_grid.values",
+          "lineNumber": 51
+        },
+        {
+          "caller": "grid_search",
+          "callee": "float",
+          "lineNumber": 54
+        },
+        {
+          "caller": "grid_search",
+          "callee": "dict",
+          "lineNumber": 58
+        },
+        {
+          "caller": "grid_search",
+          "callee": "zip",
+          "lineNumber": 58
+        },
+        {
+          "caller": "grid_search",
+          "callee": "valid_combo",
+          "lineNumber": 60
+        },
+        {
+          "caller": "grid_search",
+          "callee": "strategy_factory",
+          "lineNumber": 63
+        },
+        {
+          "caller": "grid_search",
+          "callee": "strategy.generate_signals",
+          "lineNumber": 64
+        },
+        {
+          "caller": "grid_search",
+          "callee": "run_backtest",
+          "lineNumber": 65
+        },
+        {
+          "caller": "grid_search",
+          "callee": "score_fn",
+          "lineNumber": 67
+        },
+        {
+          "caller": "grid_search",
+          "callee": "rows.append",
+          "lineNumber": 68
+        },
+        {
+          "caller": "grid_search",
+          "callee": "sharpe_ratio",
+          "lineNumber": 70
+        },
+        {
+          "caller": "grid_search",
+          "callee": "sortino_ratio",
+          "lineNumber": 71
+        },
+        {
+          "caller": "grid_search",
+          "callee": "max_drawdown",
+          "lineNumber": 72
+        },
+        {
+          "caller": "grid_search",
+          "callee": "calmar_ratio",
+          "lineNumber": 73
+        },
+        {
+          "caller": "grid_search",
+          "callee": "ValueError",
+          "lineNumber": 83
+        },
+        {
+          "caller": "grid_search",
+          "callee": "pd.DataFrame(rows).sort_values(sort_col, ascending=ascending).reset_index",
+          "lineNumber": 87
+        },
+        {
+          "caller": "grid_search",
+          "callee": "pd.DataFrame(rows).sort_values",
+          "lineNumber": 87
+        },
+        {
+          "caller": "grid_search",
+          "callee": "pd.DataFrame",
+          "lineNumber": 87
+        },
+        {
+          "caller": "grid_search",
+          "callee": "OptimizationResult",
+          "lineNumber": 89
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 2,
+        "functionCount": 1,
+        "classCount": 1
+      }
+    },
+    {
+      "path": "print_summary.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 130,
+      "nonEmptyLines": 109,
+      "functions": [
+        {
+          "name": "print_summary",
+          "startLine": 11,
+          "endLine": 52,
+          "params": [
+            "result"
+          ]
+        },
+        {
+          "name": "plot_backtest",
+          "startLine": 55,
+          "endLine": 91,
+          "params": [
+            "df",
+            "result",
+            "title"
+          ]
+        },
+        {
+          "name": "to_daily_summary",
+          "startLine": 93,
+          "endLine": 128,
+          "params": [
+            "df",
+            "result"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "print_summary",
+          "line": 11,
+          "isDefault": false
+        },
+        {
+          "name": "plot_backtest",
+          "line": 55,
+          "isDefault": false
+        },
+        {
+          "name": "to_daily_summary",
+          "line": 93,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "print_summary",
+          "callee": "print",
+          "lineNumber": 15
+        },
+        {
+          "caller": "print_summary",
+          "callee": "print",
+          "lineNumber": 16
+        },
+        {
+          "caller": "print_summary",
+          "callee": "print",
+          "lineNumber": 17
+        },
+        {
+          "caller": "print_summary",
+          "callee": "print",
+          "lineNumber": 20
+        },
+        {
+          "caller": "print_summary",
+          "callee": "sharpe_ratio",
+          "lineNumber": 20
+        },
+        {
+          "caller": "print_summary",
+          "callee": "print",
+          "lineNumber": 21
+        },
+        {
+          "caller": "print_summary",
+          "callee": "sortino_ratio",
+          "lineNumber": 21
+        },
+        {
+          "caller": "print_summary",
+          "callee": "print",
+          "lineNumber": 23
+        },
+        {
+          "caller": "print_summary",
+          "callee": "max_drawdown",
+          "lineNumber": 23
+        },
+        {
+          "caller": "print_summary",
+          "callee": "print",
+          "lineNumber": 24
+        },
+        {
+          "caller": "print_summary",
+          "callee": "calmar_ratio",
+          "lineNumber": 24
+        },
+        {
+          "caller": "print_summary",
+          "callee": "print",
+          "lineNumber": 25
+        },
+        {
+          "caller": "print_summary",
+          "callee": "print",
+          "lineNumber": 28
+        },
+        {
+          "caller": "print_summary",
+          "callee": "print",
+          "lineNumber": 29
+        },
+        {
+          "caller": "print_summary",
+          "callee": "print",
+          "lineNumber": 30
+        },
+        {
+          "caller": "print_summary",
+          "callee": "trade_stats",
+          "lineNumber": 34
+        },
+        {
+          "caller": "print_summary",
+          "callee": "print",
+          "lineNumber": 35
+        },
+        {
+          "caller": "print_summary",
+          "callee": "print",
+          "lineNumber": 36
+        },
+        {
+          "caller": "print_summary",
+          "callee": "print",
+          "lineNumber": 37
+        },
+        {
+          "caller": "print_summary",
+          "callee": "print",
+          "lineNumber": 38
+        },
+        {
+          "caller": "print_summary",
+          "callee": "print",
+          "lineNumber": 39
+        },
+        {
+          "caller": "print_summary",
+          "callee": "print",
+          "lineNumber": 40
+        },
+        {
+          "caller": "print_summary",
+          "callee": "print",
+          "lineNumber": 42
+        },
+        {
+          "caller": "print_summary",
+          "callee": "print",
+          "lineNumber": 43
+        },
+        {
+          "caller": "print_summary",
+          "callee": "print",
+          "lineNumber": 49
+        },
+        {
+          "caller": "print_summary",
+          "callee": "print",
+          "lineNumber": 50
+        },
+        {
+          "caller": "print_summary",
+          "callee": "print",
+          "lineNumber": 51
+        },
+        {
+          "caller": "print_summary",
+          "callee": "print",
+          "lineNumber": 52
+        },
+        {
+          "caller": "plot_backtest",
+          "callee": "plt.subplots",
+          "lineNumber": 58
+        },
+        {
+          "caller": "plot_backtest",
+          "callee": "df[\"close\"].where",
+          "lineNumber": 62
+        },
+        {
+          "caller": "plot_backtest",
+          "callee": "axes[0].plot",
+          "lineNumber": 63
+        },
+        {
+          "caller": "plot_backtest",
+          "callee": "axes[0].plot",
+          "lineNumber": 64
+        },
+        {
+          "caller": "plot_backtest",
+          "callee": "axes[0].scatter",
+          "lineNumber": 68
+        },
+        {
+          "caller": "plot_backtest",
+          "callee": "axes[0].scatter",
+          "lineNumber": 69
+        },
+        {
+          "caller": "plot_backtest",
+          "callee": "axes[0].set_ylabel",
+          "lineNumber": 70
+        },
+        {
+          "caller": "plot_backtest",
+          "callee": "axes[0].set_title",
+          "lineNumber": 71
+        },
+        {
+          "caller": "plot_backtest",
+          "callee": "axes[0].legend",
+          "lineNumber": 72
+        },
+        {
+          "caller": "plot_backtest",
+          "callee": "axes[1].plot",
+          "lineNumber": 74
+        },
+        {
+          "caller": "plot_backtest",
+          "callee": "axes[1].plot",
+          "lineNumber": 75
+        },
+        {
+          "caller": "plot_backtest",
+          "callee": "axes[1].plot",
+          "lineNumber": 76
+        },
+        {
+          "caller": "plot_backtest",
+          "callee": "axes[1].axhline",
+          "lineNumber": 77
+        },
+        {
+          "caller": "plot_backtest",
+          "callee": "axes[1].set_ylabel",
+          "lineNumber": 78
+        },
+        {
+          "caller": "plot_backtest",
+          "callee": "axes[1].legend",
+          "lineNumber": 79
+        },
+        {
+          "caller": "plot_backtest",
+          "callee": "min",
+          "lineNumber": 83
+        },
+        {
+          "caller": "plot_backtest",
+          "callee": "len",
+          "lineNumber": 83
+        },
+        {
+          "caller": "plot_backtest",
+          "callee": "np.linspace(0, len(df) - 1, n_ticks).astype",
+          "lineNumber": 84
+        },
+        {
+          "caller": "plot_backtest",
+          "callee": "np.linspace",
+          "lineNumber": 84
+        },
+        {
+          "caller": "plot_backtest",
+          "callee": "len",
+          "lineNumber": 84
+        },
+        {
+          "caller": "plot_backtest",
+          "callee": "df[\"timestamp\"].iloc[tick_pos].dt.strftime",
+          "lineNumber": 85
+        },
+        {
+          "caller": "plot_backtest",
+          "callee": "axes[-1].set_xticks",
+          "lineNumber": 86
+        },
+        {
+          "caller": "plot_backtest",
+          "callee": "axes[-1].set_xticklabels",
+          "lineNumber": 87
+        },
+        {
+          "caller": "plot_backtest",
+          "callee": "axes[-1].set_xlabel",
+          "lineNumber": 88
+        },
+        {
+          "caller": "plot_backtest",
+          "callee": "plt.tight_layout",
+          "lineNumber": 90
+        },
+        {
+          "caller": "to_daily_summary",
+          "callee": "ValueError",
+          "lineNumber": 99
+        },
+        {
+          "caller": "to_daily_summary",
+          "callee": "pd.DataFrame({\r\n        \"date\": calendar_date,\r\n        \"book_value\": book_value,\r\n        \"holdings\": result.holdings,\r\n        \"equity\": result.equity_curve,\r\n    }).groupby(\"date\").agg",
+          "lineNumber": 104
+        },
+        {
+          "caller": "to_daily_summary",
+          "callee": "pd.DataFrame({\r\n        \"date\": calendar_date,\r\n        \"book_value\": book_value,\r\n        \"holdings\": result.holdings,\r\n        \"equity\": result.equity_curve,\r\n    }).groupby",
+          "lineNumber": 104
+        },
+        {
+          "caller": "to_daily_summary",
+          "callee": "pd.DataFrame",
+          "lineNumber": 104
+        },
+        {
+          "caller": "to_daily_summary",
+          "callee": "daily[\"end_of_day_equity\"].diff().fillna",
+          "lineNumber": 117
+        },
+        {
+          "caller": "to_daily_summary",
+          "callee": "daily[\"end_of_day_equity\"].diff",
+          "lineNumber": 117
+        },
+        {
+          "caller": "to_daily_summary",
+          "callee": "pd.to_datetime",
+          "lineNumber": 122
+        },
+        {
+          "caller": "to_daily_summary",
+          "callee": "trade_dates.value_counts",
+          "lineNumber": 123
+        },
+        {
+          "caller": "to_daily_summary",
+          "callee": "daily[\"trade_count\"].fillna(0).astype",
+          "lineNumber": 124
+        },
+        {
+          "caller": "to_daily_summary",
+          "callee": "daily[\"trade_count\"].fillna",
+          "lineNumber": 124
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 3,
+        "functionCount": 3,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "run.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 177,
+      "nonEmptyLines": 143,
+      "functions": [
+        {
+          "name": "run_one",
+          "startLine": 28,
+          "endLine": 68,
+          "params": [
+            "name",
+            "ticker",
+            "interval",
+            "optimize",
+            "metric"
+          ]
+        },
+        {
+          "name": "cmd_single",
+          "startLine": 71,
+          "endLine": 101,
+          "params": [
+            "args"
+          ]
+        },
+        {
+          "name": "cmd_compare",
+          "startLine": 104,
+          "endLine": 138,
+          "params": [
+            "args"
+          ]
+        },
+        {
+          "name": "main",
+          "startLine": 141,
+          "endLine": 173,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "run_one",
+          "line": 28,
+          "isDefault": false
+        },
+        {
+          "name": "cmd_single",
+          "line": 71,
+          "isDefault": false
+        },
+        {
+          "name": "cmd_compare",
+          "line": 104,
+          "isDefault": false
+        },
+        {
+          "name": "main",
+          "line": 141,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "run_one",
+          "callee": "scrap.load_candles",
+          "lineNumber": 40
+        },
+        {
+          "caller": "run_one",
+          "callee": "SystemExit",
+          "lineNumber": 42
+        },
+        {
+          "caller": "run_one",
+          "callee": "df.reset_index",
+          "lineNumber": 46
+        },
+        {
+          "caller": "run_one",
+          "callee": "walk_forward_split",
+          "lineNumber": 47
+        },
+        {
+          "caller": "run_one",
+          "callee": "grid_search",
+          "lineNumber": 53
+        },
+        {
+          "caller": "run_one",
+          "callee": "VALID.get",
+          "lineNumber": 58
+        },
+        {
+          "caller": "run_one",
+          "callee": "strategy_cls",
+          "lineNumber": 64
+        },
+        {
+          "caller": "run_one",
+          "callee": "strategy.generate_signals",
+          "lineNumber": 65
+        },
+        {
+          "caller": "run_one",
+          "callee": "run_backtest",
+          "lineNumber": 66
+        },
+        {
+          "caller": "cmd_single",
+          "callee": "run_one",
+          "lineNumber": 76
+        },
+        {
+          "caller": "cmd_single",
+          "callee": "print",
+          "lineNumber": 80
+        },
+        {
+          "caller": "cmd_single",
+          "callee": "print",
+          "lineNumber": 82
+        },
+        {
+          "caller": "cmd_single",
+          "callee": "print",
+          "lineNumber": 83
+        },
+        {
+          "caller": "cmd_single",
+          "callee": "leaderboard.head(10).to_string",
+          "lineNumber": 83
+        },
+        {
+          "caller": "cmd_single",
+          "callee": "leaderboard.head",
+          "lineNumber": 83
+        },
+        {
+          "caller": "cmd_single",
+          "callee": "print",
+          "lineNumber": 84
+        },
+        {
+          "caller": "cmd_single",
+          "callee": "print",
+          "lineNumber": 85
+        },
+        {
+          "caller": "cmd_single",
+          "callee": "print",
+          "lineNumber": 87
+        },
+        {
+          "caller": "cmd_single",
+          "callee": "print",
+          "lineNumber": 89
+        },
+        {
+          "caller": "cmd_single",
+          "callee": "print_summary",
+          "lineNumber": 90
+        },
+        {
+          "caller": "cmd_single",
+          "callee": "print",
+          "lineNumber": 93
+        },
+        {
+          "caller": "cmd_single",
+          "callee": "print",
+          "lineNumber": 94
+        },
+        {
+          "caller": "cmd_single",
+          "callee": "to_daily_summary(test, result).to_string",
+          "lineNumber": 94
+        },
+        {
+          "caller": "cmd_single",
+          "callee": "to_daily_summary",
+          "lineNumber": 94
+        },
+        {
+          "caller": "cmd_single",
+          "callee": "os.makedirs",
+          "lineNumber": 97
+        },
+        {
+          "caller": "cmd_single",
+          "callee": "os.path.join",
+          "lineNumber": 99
+        },
+        {
+          "caller": "cmd_single",
+          "callee": "plot_backtest(test, result, f\"{name} / {ticker}\").savefig",
+          "lineNumber": 100
+        },
+        {
+          "caller": "cmd_single",
+          "callee": "plot_backtest",
+          "lineNumber": 100
+        },
+        {
+          "caller": "cmd_single",
+          "callee": "print",
+          "lineNumber": 101
+        },
+        {
+          "caller": "cmd_compare",
+          "callee": "sorted",
+          "lineNumber": 108
+        },
+        {
+          "caller": "cmd_compare",
+          "callee": "run_one",
+          "lineNumber": 111
+        },
+        {
+          "caller": "cmd_compare",
+          "callee": "print",
+          "lineNumber": 117
+        },
+        {
+          "caller": "cmd_compare",
+          "callee": "type",
+          "lineNumber": 117
+        },
+        {
+          "caller": "cmd_compare",
+          "callee": "trade_stats",
+          "lineNumber": 120
+        },
+        {
+          "caller": "cmd_compare",
+          "callee": "rows.append",
+          "lineNumber": 121
+        },
+        {
+          "caller": "cmd_compare",
+          "callee": "round",
+          "lineNumber": 124
+        },
+        {
+          "caller": "cmd_compare",
+          "callee": "sharpe_ratio",
+          "lineNumber": 124
+        },
+        {
+          "caller": "cmd_compare",
+          "callee": "round",
+          "lineNumber": 125
+        },
+        {
+          "caller": "cmd_compare",
+          "callee": "max_drawdown",
+          "lineNumber": 125
+        },
+        {
+          "caller": "cmd_compare",
+          "callee": "round",
+          "lineNumber": 126
+        },
+        {
+          "caller": "cmd_compare",
+          "callee": "round",
+          "lineNumber": 128
+        },
+        {
+          "caller": "cmd_compare",
+          "callee": "round",
+          "lineNumber": 129
+        },
+        {
+          "caller": "cmd_compare",
+          "callee": "SystemExit",
+          "lineNumber": 134
+        },
+        {
+          "caller": "cmd_compare",
+          "callee": "pd.DataFrame(rows).sort_values(\"샤프\", ascending=False).reset_index",
+          "lineNumber": 136
+        },
+        {
+          "caller": "cmd_compare",
+          "callee": "pd.DataFrame(rows).sort_values",
+          "lineNumber": 136
+        },
+        {
+          "caller": "cmd_compare",
+          "callee": "pd.DataFrame",
+          "lineNumber": 136
+        },
+        {
+          "caller": "cmd_compare",
+          "callee": "print",
+          "lineNumber": 137
+        },
+        {
+          "caller": "cmd_compare",
+          "callee": "print",
+          "lineNumber": 138
+        },
+        {
+          "caller": "cmd_compare",
+          "callee": "table.to_string",
+          "lineNumber": 138
+        },
+        {
+          "caller": "main",
+          "callee": "argparse.ArgumentParser",
+          "lineNumber": 142
+        },
+        {
+          "caller": "main",
+          "callee": "parser.add_argument",
+          "lineNumber": 150
+        },
+        {
+          "caller": "main",
+          "callee": "', '.join",
+          "lineNumber": 151
+        },
+        {
+          "caller": "main",
+          "callee": "sorted",
+          "lineNumber": 151
+        },
+        {
+          "caller": "main",
+          "callee": "parser.add_argument",
+          "lineNumber": 152
+        },
+        {
+          "caller": "main",
+          "callee": "parser.add_argument",
+          "lineNumber": 153
+        },
+        {
+          "caller": "main",
+          "callee": "parser.add_argument",
+          "lineNumber": 154
+        },
+        {
+          "caller": "main",
+          "callee": "parser.add_argument",
+          "lineNumber": 155
+        },
+        {
+          "caller": "main",
+          "callee": "parser.add_argument",
+          "lineNumber": 157
+        },
+        {
+          "caller": "main",
+          "callee": "parser.add_argument",
+          "lineNumber": 160
+        },
+        {
+          "caller": "main",
+          "callee": "parser.add_argument",
+          "lineNumber": 161
+        },
+        {
+          "caller": "main",
+          "callee": "parser.parse_args",
+          "lineNumber": 162
+        },
+        {
+          "caller": "main",
+          "callee": "cmd_compare",
+          "lineNumber": 165
+        },
+        {
+          "caller": "main",
+          "callee": "parser.error",
+          "lineNumber": 168
+        },
+        {
+          "caller": "main",
+          "callee": "parser.error",
+          "lineNumber": 170
+        },
+        {
+          "caller": "main",
+          "callee": "', '.join",
+          "lineNumber": 171
+        },
+        {
+          "caller": "main",
+          "callee": "sorted",
+          "lineNumber": 171
+        },
+        {
+          "caller": "main",
+          "callee": "cmd_single",
+          "lineNumber": 173
+        }
+      ],
+      "metrics": {
+        "importCount": 8,
+        "exportCount": 4,
+        "functionCount": 4,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "strategies/__init__.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 45,
+      "nonEmptyLines": 35,
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "test_harness.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 245,
+      "nonEmptyLines": 195,
+      "functions": [
+        {
+          "name": "_s",
+          "startLine": 16,
+          "endLine": 18,
+          "params": [
+            "values"
+          ]
+        },
+        {
+          "name": "test_to_signals_기본_왕복",
+          "startLine": 21,
+          "endLine": 25,
+          "params": []
+        },
+        {
+          "name": "test_to_signals_중복_진입_차단",
+          "startLine": 28,
+          "endLine": 33,
+          "params": []
+        },
+        {
+          "name": "test_to_signals_미보유_청산_무시",
+          "startLine": 36,
+          "endLine": 40,
+          "params": []
+        },
+        {
+          "name": "test_to_signals_워밍업_구간은_전부_0",
+          "startLine": 43,
+          "endLine": 47,
+          "params": []
+        },
+        {
+          "name": "test_to_signals_동시신호_결정1",
+          "startLine": 50,
+          "endLine": 56,
+          "params": []
+        },
+        {
+          "name": "test_to_signals_NaN은_False로_취급",
+          "startLine": 59,
+          "endLine": 63,
+          "params": []
+        },
+        {
+          "name": "test_to_signals_인덱스_보존",
+          "startLine": 66,
+          "endLine": 72,
+          "params": []
+        },
+        {
+          "name": "test_to_signals_인덱스_불일치는_에러",
+          "startLine": 75,
+          "endLine": 83,
+          "params": []
+        },
+        {
+          "name": "_candles",
+          "startLine": 86,
+          "endLine": 92,
+          "params": [
+            "closes"
+          ]
+        },
+        {
+          "name": "test_engine_fill_price_슬리피지_반영",
+          "startLine": 95,
+          "endLine": 104,
+          "params": []
+        },
+        {
+          "name": "test_trade_stats_손으로_계산한_값과_일치",
+          "startLine": 107,
+          "endLine": 126,
+          "params": []
+        },
+        {
+          "name": "test_trade_stats_미청산_포지션_분리",
+          "startLine": 129,
+          "endLine": 140,
+          "params": []
+        },
+        {
+          "name": "test_trade_stats_거래_없음",
+          "startLine": 143,
+          "endLine": 148,
+          "params": []
+        },
+        {
+          "name": "test_daily_summary_일별_손익",
+          "startLine": 151,
+          "endLine": 175,
+          "params": []
+        },
+        {
+          "name": "test_max_drawdown_투입원금_대비",
+          "startLine": 178,
+          "endLine": 184,
+          "params": []
+        },
+        {
+          "name": "test_max_drawdown_손실만_난_경우도_유한",
+          "startLine": 187,
+          "endLine": 193,
+          "params": []
+        },
+        {
+          "name": "test_calmar_손익곡선에서_유한한_값",
+          "startLine": 196,
+          "endLine": 204,
+          "params": []
+        },
+        {
+          "name": "test_registry_전략을_이름으로_찾을_수_있다",
+          "startLine": 207,
+          "endLine": 214,
+          "params": []
+        },
+        {
+          "name": "test_grids_키는_전부_실재하는_전략",
+          "startLine": 217,
+          "endLine": 222,
+          "params": []
+        },
+        {
+          "name": "test_grids_파라미터명이_생성자와_일치",
+          "startLine": 225,
+          "endLine": 231,
+          "params": []
+        },
+        {
+          "name": "_run_all",
+          "startLine": 234,
+          "endLine": 241,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "_s",
+          "line": 16,
+          "isDefault": false
+        },
+        {
+          "name": "test_to_signals_기본_왕복",
+          "line": 21,
+          "isDefault": false
+        },
+        {
+          "name": "test_to_signals_중복_진입_차단",
+          "line": 28,
+          "isDefault": false
+        },
+        {
+          "name": "test_to_signals_미보유_청산_무시",
+          "line": 36,
+          "isDefault": false
+        },
+        {
+          "name": "test_to_signals_워밍업_구간은_전부_0",
+          "line": 43,
+          "isDefault": false
+        },
+        {
+          "name": "test_to_signals_동시신호_결정1",
+          "line": 50,
+          "isDefault": false
+        },
+        {
+          "name": "test_to_signals_NaN은_False로_취급",
+          "line": 59,
+          "isDefault": false
+        },
+        {
+          "name": "test_to_signals_인덱스_보존",
+          "line": 66,
+          "isDefault": false
+        },
+        {
+          "name": "test_to_signals_인덱스_불일치는_에러",
+          "line": 75,
+          "isDefault": false
+        },
+        {
+          "name": "_candles",
+          "line": 86,
+          "isDefault": false
+        },
+        {
+          "name": "test_engine_fill_price_슬리피지_반영",
+          "line": 95,
+          "isDefault": false
+        },
+        {
+          "name": "test_trade_stats_손으로_계산한_값과_일치",
+          "line": 107,
+          "isDefault": false
+        },
+        {
+          "name": "test_trade_stats_미청산_포지션_분리",
+          "line": 129,
+          "isDefault": false
+        },
+        {
+          "name": "test_trade_stats_거래_없음",
+          "line": 143,
+          "isDefault": false
+        },
+        {
+          "name": "test_daily_summary_일별_손익",
+          "line": 151,
+          "isDefault": false
+        },
+        {
+          "name": "test_max_drawdown_투입원금_대비",
+          "line": 178,
+          "isDefault": false
+        },
+        {
+          "name": "test_max_drawdown_손실만_난_경우도_유한",
+          "line": 187,
+          "isDefault": false
+        },
+        {
+          "name": "test_calmar_손익곡선에서_유한한_값",
+          "line": 196,
+          "isDefault": false
+        },
+        {
+          "name": "test_registry_전략을_이름으로_찾을_수_있다",
+          "line": 207,
+          "isDefault": false
+        },
+        {
+          "name": "test_grids_키는_전부_실재하는_전략",
+          "line": 217,
+          "isDefault": false
+        },
+        {
+          "name": "test_grids_파라미터명이_생성자와_일치",
+          "line": 225,
+          "isDefault": false
+        },
+        {
+          "name": "_run_all",
+          "line": 234,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "_s",
+          "callee": "pd.Series",
+          "lineNumber": 18
+        },
+        {
+          "caller": "test_to_signals_기본_왕복",
+          "callee": "_s",
+          "lineNumber": 23
+        },
+        {
+          "caller": "test_to_signals_기본_왕복",
+          "callee": "_s",
+          "lineNumber": 24
+        },
+        {
+          "caller": "test_to_signals_기본_왕복",
+          "callee": "list",
+          "lineNumber": 25
+        },
+        {
+          "caller": "test_to_signals_기본_왕복",
+          "callee": "to_signals",
+          "lineNumber": 25
+        },
+        {
+          "caller": "test_to_signals_중복_진입_차단",
+          "callee": "_s",
+          "lineNumber": 31
+        },
+        {
+          "caller": "test_to_signals_중복_진입_차단",
+          "callee": "_s",
+          "lineNumber": 32
+        },
+        {
+          "caller": "test_to_signals_중복_진입_차단",
+          "callee": "list",
+          "lineNumber": 33
+        },
+        {
+          "caller": "test_to_signals_중복_진입_차단",
+          "callee": "to_signals",
+          "lineNumber": 33
+        },
+        {
+          "caller": "test_to_signals_미보유_청산_무시",
+          "callee": "_s",
+          "lineNumber": 38
+        },
+        {
+          "caller": "test_to_signals_미보유_청산_무시",
+          "callee": "_s",
+          "lineNumber": 39
+        },
+        {
+          "caller": "test_to_signals_미보유_청산_무시",
+          "callee": "list",
+          "lineNumber": 40
+        },
+        {
+          "caller": "test_to_signals_미보유_청산_무시",
+          "callee": "to_signals",
+          "lineNumber": 40
+        },
+        {
+          "caller": "test_to_signals_워밍업_구간은_전부_0",
+          "callee": "_s",
+          "lineNumber": 45
+        },
+        {
+          "caller": "test_to_signals_워밍업_구간은_전부_0",
+          "callee": "_s",
+          "lineNumber": 46
+        },
+        {
+          "caller": "test_to_signals_워밍업_구간은_전부_0",
+          "callee": "list",
+          "lineNumber": 47
+        },
+        {
+          "caller": "test_to_signals_워밍업_구간은_전부_0",
+          "callee": "to_signals",
+          "lineNumber": 47
+        },
+        {
+          "caller": "test_to_signals_동시신호_결정1",
+          "callee": "_s",
+          "lineNumber": 52
+        },
+        {
+          "caller": "test_to_signals_동시신호_결정1",
+          "callee": "_s",
+          "lineNumber": 53
+        },
+        {
+          "caller": "test_to_signals_동시신호_결정1",
+          "callee": "list",
+          "lineNumber": 56
+        },
+        {
+          "caller": "test_to_signals_동시신호_결정1",
+          "callee": "to_signals",
+          "lineNumber": 56
+        },
+        {
+          "caller": "test_to_signals_NaN은_False로_취급",
+          "callee": "pd.Series",
+          "lineNumber": 61
+        },
+        {
+          "caller": "test_to_signals_NaN은_False로_취급",
+          "callee": "pd.Series",
+          "lineNumber": 62
+        },
+        {
+          "caller": "test_to_signals_NaN은_False로_취급",
+          "callee": "list",
+          "lineNumber": 63
+        },
+        {
+          "caller": "test_to_signals_NaN은_False로_취급",
+          "callee": "to_signals",
+          "lineNumber": 63
+        },
+        {
+          "caller": "test_to_signals_인덱스_보존",
+          "callee": "pd.date_range",
+          "lineNumber": 69
+        },
+        {
+          "caller": "test_to_signals_인덱스_보존",
+          "callee": "pd.Series",
+          "lineNumber": 70
+        },
+        {
+          "caller": "test_to_signals_인덱스_보존",
+          "callee": "pd.Series",
+          "lineNumber": 71
+        },
+        {
+          "caller": "test_to_signals_인덱스_보존",
+          "callee": "to_signals(entries, exits).index.equals",
+          "lineNumber": 72
+        },
+        {
+          "caller": "test_to_signals_인덱스_보존",
+          "callee": "to_signals",
+          "lineNumber": 72
+        },
+        {
+          "caller": "test_to_signals_인덱스_불일치는_에러",
+          "callee": "pd.Series",
+          "lineNumber": 76
+        },
+        {
+          "caller": "test_to_signals_인덱스_불일치는_에러",
+          "callee": "pd.Series",
+          "lineNumber": 77
+        },
+        {
+          "caller": "test_to_signals_인덱스_불일치는_에러",
+          "callee": "to_signals",
+          "lineNumber": 79
+        },
+        {
+          "caller": "test_to_signals_인덱스_불일치는_에러",
+          "callee": "AssertionError",
+          "lineNumber": 83
+        },
+        {
+          "caller": "_candles",
+          "callee": "pd.DataFrame",
+          "lineNumber": 88
+        },
+        {
+          "caller": "_candles",
+          "callee": "pd.date_range",
+          "lineNumber": 89
+        },
+        {
+          "caller": "_candles",
+          "callee": "len",
+          "lineNumber": 89
+        },
+        {
+          "caller": "_candles",
+          "callee": "len",
+          "lineNumber": 91
+        },
+        {
+          "caller": "test_engine_fill_price_슬리피지_반영",
+          "callee": "_candles",
+          "lineNumber": 97
+        },
+        {
+          "caller": "test_engine_fill_price_슬리피지_반영",
+          "callee": "pd.Series",
+          "lineNumber": 98
+        },
+        {
+          "caller": "test_engine_fill_price_슬리피지_반영",
+          "callee": "run_backtest",
+          "lineNumber": 99
+        },
+        {
+          "caller": "test_trade_stats_손으로_계산한_값과_일치",
+          "callee": "pd.DataFrame",
+          "lineNumber": 111
+        },
+        {
+          "caller": "test_trade_stats_손으로_계산한_값과_일치",
+          "callee": "trade_stats",
+          "lineNumber": 117
+        },
+        {
+          "caller": "test_trade_stats_손으로_계산한_값과_일치",
+          "callee": "abs",
+          "lineNumber": 121
+        },
+        {
+          "caller": "test_trade_stats_손으로_계산한_값과_일치",
+          "callee": "abs",
+          "lineNumber": 122
+        },
+        {
+          "caller": "test_trade_stats_손으로_계산한_값과_일치",
+          "callee": "abs",
+          "lineNumber": 123
+        },
+        {
+          "caller": "test_trade_stats_손으로_계산한_값과_일치",
+          "callee": "abs",
+          "lineNumber": 124
+        },
+        {
+          "caller": "test_trade_stats_미청산_포지션_분리",
+          "callee": "pd.DataFrame",
+          "lineNumber": 132
+        },
+        {
+          "caller": "test_trade_stats_미청산_포지션_분리",
+          "callee": "trade_stats",
+          "lineNumber": 137
+        },
+        {
+          "caller": "test_trade_stats_거래_없음",
+          "callee": "trade_stats",
+          "lineNumber": 145
+        },
+        {
+          "caller": "test_trade_stats_거래_없음",
+          "callee": "pd.DataFrame",
+          "lineNumber": 145
+        },
+        {
+          "caller": "test_daily_summary_일별_손익",
+          "callee": "pd.DataFrame",
+          "lineNumber": 154
+        },
+        {
+          "caller": "test_daily_summary_일별_손익",
+          "callee": "pd.to_datetime",
+          "lineNumber": 155
+        },
+        {
+          "caller": "test_daily_summary_일별_손익",
+          "callee": "pd.Series",
+          "lineNumber": 166
+        },
+        {
+          "caller": "test_daily_summary_일별_손익",
+          "callee": "run_backtest",
+          "lineNumber": 167
+        },
+        {
+          "caller": "test_daily_summary_일별_손익",
+          "callee": "to_daily_summary",
+          "lineNumber": 169
+        },
+        {
+          "caller": "test_daily_summary_일별_손익",
+          "callee": "abs",
+          "lineNumber": 172
+        },
+        {
+          "caller": "test_daily_summary_일별_손익",
+          "callee": "abs",
+          "lineNumber": 173
+        },
+        {
+          "caller": "test_daily_summary_일별_손익",
+          "callee": "abs",
+          "lineNumber": 175
+        },
+        {
+          "caller": "test_max_drawdown_투입원금_대비",
+          "callee": "pd.Series",
+          "lineNumber": 182
+        },
+        {
+          "caller": "test_max_drawdown_투입원금_대비",
+          "callee": "abs",
+          "lineNumber": 184
+        },
+        {
+          "caller": "test_max_drawdown_투입원금_대비",
+          "callee": "max_drawdown",
+          "lineNumber": 184
+        },
+        {
+          "caller": "test_max_drawdown_손실만_난_경우도_유한",
+          "callee": "pd.Series",
+          "lineNumber": 190
+        },
+        {
+          "caller": "test_max_drawdown_손실만_난_경우도_유한",
+          "callee": "max_drawdown",
+          "lineNumber": 191
+        },
+        {
+          "caller": "test_max_drawdown_손실만_난_경우도_유한",
+          "callee": "pd.notna",
+          "lineNumber": 193
+        },
+        {
+          "caller": "test_calmar_손익곡선에서_유한한_값",
+          "callee": "pd.Series",
+          "lineNumber": 199
+        },
+        {
+          "caller": "test_calmar_손익곡선에서_유한한_값",
+          "callee": "equity.diff().fillna",
+          "lineNumber": 200
+        },
+        {
+          "caller": "test_calmar_손익곡선에서_유한한_값",
+          "callee": "equity.diff",
+          "lineNumber": 200
+        },
+        {
+          "caller": "test_calmar_손익곡선에서_유한한_값",
+          "callee": "calmar_ratio",
+          "lineNumber": 201
+        },
+        {
+          "caller": "test_calmar_손익곡선에서_유한한_값",
+          "callee": "pd.notna",
+          "lineNumber": 202
+        },
+        {
+          "caller": "test_registry_전략을_이름으로_찾을_수_있다",
+          "callee": "isinstance",
+          "lineNumber": 214
+        },
+        {
+          "caller": "test_grids_파라미터명이_생성자와_일치",
+          "callee": "GRIDS.items",
+          "lineNumber": 228
+        },
+        {
+          "caller": "test_grids_파라미터명이_생성자와_일치",
+          "callee": "inspect.signature",
+          "lineNumber": 229
+        },
+        {
+          "caller": "_run_all",
+          "callee": "sorted",
+          "lineNumber": 236
+        },
+        {
+          "caller": "_run_all",
+          "callee": "globals().items",
+          "lineNumber": 236
+        },
+        {
+          "caller": "_run_all",
+          "callee": "globals",
+          "lineNumber": 236
+        },
+        {
+          "caller": "_run_all",
+          "callee": "name.startswith",
+          "lineNumber": 237
+        },
+        {
+          "caller": "_run_all",
+          "callee": "callable",
+          "lineNumber": 237
+        },
+        {
+          "caller": "_run_all",
+          "callee": "fn",
+          "lineNumber": 239
+        },
+        {
+          "caller": "_run_all",
+          "callee": "print",
+          "lineNumber": 240
+        },
+        {
+          "caller": "_run_all",
+          "callee": "print",
+          "lineNumber": 241
+        },
+        {
+          "caller": "_run_all",
+          "callee": "len",
+          "lineNumber": 241
+        }
+      ],
+      "metrics": {
+        "importCount": 6,
+        "exportCount": 22,
+        "functionCount": 22,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "validation.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 7,
+      "nonEmptyLines": 6,
+      "functions": [
+        {
+          "name": "walk_forward_split",
+          "startLine": 3,
+          "endLine": 7,
+          "params": [
+            "df",
+            "train_ratio"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "walk_forward_split",
+          "line": 3,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "walk_forward_split",
+          "callee": "int",
+          "lineNumber": 4
+        },
+        {
+          "caller": "walk_forward_split",
+          "callee": "len",
+          "lineNumber": 4
+        },
+        {
+          "caller": "walk_forward_split",
+          "callee": "df.iloc[:split_idx].reset_index",
+          "lineNumber": 5
+        },
+        {
+          "caller": "walk_forward_split",
+          "callee": "df.iloc[split_idx:].reset_index",
+          "lineNumber": 6
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    }
+  ]
+}
