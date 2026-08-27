@@ -1,15 +1,23 @@
-import numpy as np
-import pandas as pd
-import requests 
-import xlwings as xw
-from scipy.optimize import minimize_scalar
-import matplotlib.pyplot as plt
+import scrap
+import strategies
+from backtest_engine import run_backtest
+from validation import walk_forward_split
+from print_summary import print_summary, plot_backtest, to_daily_summary
 
-df = pd.read_excel(r"C:\Users\Administrator\Desktop\orchestra.xlsx", sheet_name="SKHynix")
-df = df.rename(columns={
-    "OpenPrice": "Open",
-    "ClosePrice": "Close",
-    "HighPrice": "High",
-    "LowPrice": "Low",
-    "volume": "volume"
-})
+ticker = "000660"
+interval = "1m"
+df = scrap.load_candles(ticker, interval)
+train, test = walk_forward_split(df)
+
+strategy = 
+signal = strategy.generate_signals(test)
+result = run_backtest(test, signal)
+
+print_summary(result)
+
+title=f"SessionClose"
+fig = plot_backtest(test, result, title)
+fig.savefig(r"C:\Users\sungwon\Desktop\Project\toss\graph" + f"{strategy.__str__}with{ticker}.png", dpi=120)
+
+daily_report = to_daily_summary(test, result)
+print(daily_report)
