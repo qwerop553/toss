@@ -12,36 +12,27 @@ class SessionCloseStrategy(Strategy):
         self.entry_time = pd.to_datetime(entry_time).time()
         self.exit_time = pd.to_datetime(exit_time).time()
 
-    def generate_signals(self, df: pd.DataFrame) -> pd.Series:
+    def _times(self, df: pd.DataFrame):
         if "timestamp" not in df.columns:
             raise ValueError("df에 'timestamp' 컬럼이 필요합니다.")
-
         ts = pd.to_datetime(df["timestamp"])
-        t = ts.dt.time
-        date = ts.dt.date
+        return ts.dt.time, ts.dt.date
 
-        signal = pd.Series(0, index=df.index)
-        holding = False
-        n = len(df)
+    def entries(self, df: pd.DataFrame) -> pd.Series:
+        # [매수] 15:30 봉
+        t, _ = self._times(df)
+        return t == self.entry_time
 
-        for i in range(n):
-            cur_t = t.iloc[i]
-            is_last_bar_of_day = (i == n - 1) or (date.iloc[i] != date.iloc[i + 1])
-
-            # [매수] 미보유 상태에서 15:30 봉 도달
-            if not holding and cur_t == self.entry_time:
-                signal.iloc[i] = 1
-                holding = True
-
-            # [매도] 보유 상태에서 20:00 봉 도달
-            elif holding and cur_t == self.exit_time:
-                signal.iloc[i] = -1
-                holding = False
-
-            # [안전장치] 어떤 이유로든 20:00 봉이 그날 없었는데 아직 보유 중이면
-            # 당일 마지막 봉에서 강제 청산 (오버나잇 리스크로 새는 것 방지)
-            elif holding and is_last_bar_of_day:
-                signal.iloc[i] = -1
-                holding = False
-
-        return signal
+    def exits(self, df: pd.DataFrame) -> pd.Series:
+        # [매도] 20:00 봉.
+        #
+        # 여기에 '그날의 마지막 봉'을 OR로 더한 것은 안전장치다. 어떤 이유로든
+        # 20:00 봉이 그날 데이터에 없으면 포지션이 다음 날로 넘어가 버리는데,
+        # 이 전략은 오버나잇을 하지 않기로 되어 있다.
+        #
+        # 미보유 상태의 청산 조건은 to_signals가 어차피 무시하므로, 예전 코드처럼
+        # holding 여부를 여기서 따질 필요가 없다.
+        t, date = self._times(df)
+        is_last_bar_of_day = date != date.shift(-1)   # 다음 행의 날짜가 다르면 그날 마지막 봉
+        is_last_bar_of_day.iloc[-1] = True            # 데이터 전체의 마지막 봉도 포함
+        return (t == self.exit_time) | is_last_bar_of_day
