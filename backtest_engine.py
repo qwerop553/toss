@@ -45,12 +45,19 @@ def run_backtest(df: pd.DataFrame, signal: pd.Series,
             step_cost = price * buy_slippage
             flow -= price + step_cost
             holdings += 1
-            trades.append({"position": i, "date": df["timestamp"].iloc[i], "side": "buy", "price": price})
+            # fill_price: 슬리피지까지 반영된 '실제로 나간 돈'.
+            # 승률·손익비를 낼 때 원가격(price)을 쓰면 비용이 빠져 실제보다
+            # 후하게 나오므로, 체결가를 여기서 함께 기록해 둔다.
+            trades.append({"position": i, "date": df["timestamp"].iloc[i],
+                           "side": "buy", "price": price,
+                           "fill_price": price + step_cost})
         elif sig == -1 and holdings > 0:
             step_cost = price * sell_slippage
             flow += price - step_cost
             holdings -= 1
-            trades.append({"position": i, "date": df["timestamp"].iloc[i], "side": "sell", "price": price})
+            trades.append({"position": i, "date": df["timestamp"].iloc[i],
+                           "side": "sell", "price": price,
+                           "fill_price": price - step_cost})
 
         cash_flow.append(flow)
         holdings_series.append(holdings)

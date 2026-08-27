@@ -5,6 +5,8 @@
 """
 import pandas as pd
 
+from backtest_engine import run_backtest
+from metrics import trade_stats
 from strategies.base import to_signals
 
 
@@ -76,6 +78,71 @@ def test_to_signals_인덱스_불일치는_에러():
         pass
     else:
         raise AssertionError("인덱스가 다른데 ValueError가 나지 않았다")
+
+
+def _candles(closes):
+    """종가만 지정해서 최소한의 OHLCV df를 만든다. 고가/저가는 종가와 동일."""
+    return pd.DataFrame({
+        "timestamp": pd.date_range("2026-01-01 09:00", periods=len(closes), freq="min"),
+        "open": closes, "high": closes, "low": closes, "close": closes,
+        "volume": [1.0] * len(closes),
+    })
+
+
+def test_engine_fill_price_슬리피지_반영():
+    # 매수 체결가는 원가격보다 비싸고, 매도 체결가는 원가격보다 싸야 한다.
+    df = _candles([100.0, 110.0])
+    signal = pd.Series([1, -1], index=df.index)
+    result = run_backtest(df, signal, buy_slippage=0.01, sell_slippage=0.02)
+
+    buy = result.trades[result.trades["side"] == "buy"].iloc[0]
+    sell = result.trades[result.trades["side"] == "sell"].iloc[0]
+    assert buy["fill_price"] == 101.0   # 100 + 100*0.01
+    assert sell["fill_price"] == 107.8  # 110 - 110*0.02
+
+
+def test_trade_stats_손으로_계산한_값과_일치():
+    # 왕복 2건: 하나는 이기고 하나는 진다.
+    #   1) 100에 사서 110에 팜 -> +10, 수익률 +10%
+    #   2) 200에 사서 180에 팜 -> -20, 수익률 -10%
+    trades = pd.DataFrame([
+        {"position": 0, "date": None, "side": "buy",  "price": 100.0, "fill_price": 100.0},
+        {"position": 2, "date": None, "side": "sell", "price": 110.0, "fill_price": 110.0},
+        {"position": 5, "date": None, "side": "buy",  "price": 200.0, "fill_price": 200.0},
+        {"position": 9, "date": None, "side": "sell", "price": 180.0, "fill_price": 180.0},
+    ])
+    stats = trade_stats(trades)
+
+    assert stats["round_trips"] == 2
+    assert stats["win_rate"] == 0.5
+    assert abs(stats["avg_return"] - 0.0) < 1e-12       # (+0.10 + -0.10) / 2
+    assert abs(stats["avg_win"] - 0.10) < 1e-12
+    assert abs(stats["avg_loss"] - (-0.10)) < 1e-12
+    assert abs(stats["profit_factor"] - 0.5) < 1e-12    # 총이익 10 / 총손실 20
+    assert stats["avg_holding_bars"] == 3.0             # (2-0)과 (9-5)의 평균
+    assert stats["open_position"] == 0
+
+
+def test_trade_stats_미청산_포지션_분리():
+    # 마지막 매수가 청산되지 않았다면 왕복으로 세지 않고 따로 보고한다
+    # (설계 결정 2: 마지막 봉에서 강제 청산하지 않는다).
+    trades = pd.DataFrame([
+        {"position": 0, "date": None, "side": "buy",  "price": 100.0, "fill_price": 100.0},
+        {"position": 2, "date": None, "side": "sell", "price": 110.0, "fill_price": 110.0},
+        {"position": 5, "date": None, "side": "buy",  "price": 200.0, "fill_price": 200.0},
+    ])
+    stats = trade_stats(trades)
+    assert stats["round_trips"] == 1
+    assert stats["open_position"] == 1
+    assert stats["win_rate"] == 1.0
+
+
+def test_trade_stats_거래_없음():
+    # 신호가 하나도 안 나온 전략에서 ZeroDivisionError가 나면 안 된다.
+    stats = trade_stats(pd.DataFrame())
+    assert stats["round_trips"] == 0
+    assert stats["win_rate"] == 0.0
+    assert stats["profit_factor"] == 0.0
 
 
 def _run_all():
