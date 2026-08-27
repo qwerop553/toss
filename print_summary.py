@@ -1,7 +1,12 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from metrics import sharpe_ratio, sortino_ratio, max_drawdown, calmar_ratio
+
+# BacktestResult를 실제로 임포트한다. 지금까지는 임포트 없이 타입 힌트로만
+# 써 왔는데, Python 3.14의 지연 annotation 평가(PEP 649) 덕에 우연히 동작했을
+# 뿐이라 하위 버전에서는 NameError가 난다.
+from backtest_engine import BacktestResult
+from metrics import sharpe_ratio, sortino_ratio, max_drawdown, calmar_ratio, trade_stats
 
 def print_summary(result: BacktestResult) -> None:
     """
@@ -20,7 +25,20 @@ def print_summary(result: BacktestResult) -> None:
     
     # Portfolio Metrics
     print(f"Max Book Size    : {result.max_book_size:,.0f}원")
-    print(f"Trade Count      : {result.trade_count:,}회")
+    print(f"신호 발생 횟수     : {result.trade_count:,}회")
+    print("-" * 50)
+
+    # 거래 단위 통계 — '이 전략이 한 번 들어가서 몇 % 먹고 나오나'를 본다.
+    # 위쪽의 Sharpe/MDD는 자본 곡선 기준이라 답하는 질문이 다르다.
+    stats = trade_stats(result.trades)
+    print(f"왕복 거래 수       : {stats['round_trips']:,}회")
+    print(f"승률              : {stats['win_rate']:.1%}")
+    print(f"평균 수익률        : {stats['avg_return']:+.3%}  (표준편차 {stats['std_return']:.3%})")
+    print(f"평균 이익 / 손실   : {stats['avg_win']:+.3%} / {stats['avg_loss']:+.3%}")
+    print(f"손익비 (PF)       : {stats['profit_factor']:.2f}")
+    print(f"평균 보유 봉 수    : {stats['avg_holding_bars']:.1f}봉")
+    if stats["open_position"]:
+        print(f"미청산            : {stats['open_position']}주 (마지막 봉 기준 보유 중)")
     print("-" * 50)
     
     # PnL Summary
@@ -91,6 +109,12 @@ def to_daily_summary(df: pd.DataFrame, result: BacktestResult) -> pd.DataFrame:
         max_book_size=("book_value", "max"),      # 그날 최대로 물려있던 금액
         max_holdings=("holdings", "max"),           # 그날 최대 보유 주식 수
         end_of_day_equity=("equity", "last"),        # 그날 마감 시점 누적 손익
+    )
+
+    # 그날 '번 돈'. end_of_day_equity는 누적이라 하루 성과가 안 보인다.
+    # 첫날은 이전 날이 없으므로 마감 누적을 그대로 그날의 손익으로 본다.
+    daily["daily_pnl"] = daily["end_of_day_equity"].diff().fillna(
+        daily["end_of_day_equity"].iloc[0]
     )
 
     if not result.trades.empty:

@@ -7,6 +7,7 @@ import pandas as pd
 
 from backtest_engine import run_backtest
 from metrics import trade_stats
+from print_summary import to_daily_summary
 from strategies.base import to_signals
 
 
@@ -143,6 +144,33 @@ def test_trade_stats_거래_없음():
     assert stats["round_trips"] == 0
     assert stats["win_rate"] == 0.0
     assert stats["profit_factor"] == 0.0
+
+
+def test_daily_summary_일별_손익():
+    # 이틀치 데이터. 하루가 넘어갈 때 그날의 손익이 누적이 아니라
+    # '그날 번 돈'으로 나와야 한다.
+    df = pd.DataFrame({
+        "timestamp": pd.to_datetime([
+            "2026-01-01 09:00", "2026-01-01 09:01",
+            "2026-01-02 09:00", "2026-01-02 09:01",
+        ]),
+        "open": [100.0, 100.0, 100.0, 100.0],
+        "high": [100.0, 110.0, 110.0, 130.0],
+        "low":  [100.0, 110.0, 110.0, 130.0],
+        "close": [100.0, 110.0, 110.0, 130.0],
+        "volume": [1.0] * 4,
+    })
+    # 첫 봉에 매수하고 계속 보유 -> 평가손익만 움직인다.
+    signal = pd.Series([1, 0, 0, 0], index=df.index)
+    result = run_backtest(df, signal, buy_slippage=0.0, sell_slippage=0.0)
+
+    daily = to_daily_summary(df, result)
+    assert "daily_pnl" in daily.columns
+    # 1일차 마감 누적 +10, 2일차 마감 누적 +30 -> 2일차의 그날 손익은 +20
+    assert abs(daily["daily_pnl"].iloc[0] - 10.0) < 1e-9
+    assert abs(daily["daily_pnl"].iloc[1] - 20.0) < 1e-9
+    # 누적 컬럼은 그대로 살아 있어야 한다
+    assert abs(daily["end_of_day_equity"].iloc[1] - 30.0) < 1e-9
 
 
 def _run_all():
