@@ -1778,6 +1778,31 @@ async def startup() -> None:
         except toss.TossError as exc:
             on_status("error", str(exc))
     asyncio.create_task(feed.run())
+    asyncio.create_task(expire_at_close())
+
+
+async def expire_at_close() -> None:
+    """
+    장 마감에 미체결 주문을 만료시킨다.
+
+    실제 주문은 당일 만료다. 이걸 안 하면 어제 걸어 둔 지정가가 오늘 시세에
+    체결되는데, 그건 실제로는 일어나지 않는 일이라 잔고가 거짓이 된다.
+
+    ponytail: 1분마다 시각만 확인하는 폴링이다. 정확한 시각에 깨우려면 타이머를
+    장 구간에 맞춰 재설정해야 하는데, 서버가 며칠씩 떠 있는 물건이 아니라서
+    그만한 정밀도가 필요 없다.
+    """
+    while True:
+        await asyncio.sleep(60)
+        session = current_session()
+        if session is None:
+            continue
+        now = datetime.now(session.end.tzinfo)
+        if now >= session.end:
+            expired = broker.expire_all(now=now)
+            if expired:
+                broadcast({"type": "expired", "order_ids": expired})
+                broadcast(portfolio_payload())
 
 
 # ---------------------------------------------------------------- REST
@@ -2184,6 +2209,7 @@ ws.onmessage = ev => {
   else if (m.type === "orderbook" && m.symbol === symbol) drawBook(m);
   else if (m.type === "trade") { if (m.symbol === symbol) loadWatchThrottled(); }
   else if (m.type === "fill") { loadOpen(); }
+  else if (m.type === "expired") { loadOpen(); }
 };
 ws.onclose = () => banner("reconnecting", "브라우저 연결이 끊겼습니다. 새로고침하세요.");
 
@@ -2315,7 +2341,9 @@ git commit -m "docs: 모의투자 웹사이트 사용법과 설계 제약 기록
 | 연결 끊김 배너 | T7 `on_status` → T8 `broadcast` → T9 `banner()` |
 | 테스트 12항목 | T1~T5 (25개로 확장) |
 
-**빠진 것 하나**: 스펙의 `expire_all`을 15:30에 **자동으로** 부르는 스케줄러가 없다. `app.py`에 넣으면 태스크가 하나 더 늘어나는데, 실익 대비 복잡도가 커서 **1차에서는 수동**으로 둔다 — `POST /api/reset`처럼 사용자가 부르거나, 다음 날 첫 주문 시 `place()`가 어제 주문을 만료시키는 편이 낫다. 이건 실행 중 결정할 사항이므로 여기 적어 둔다.
+| 15:30 자동 만료 | T8 `expire_at_close()` |
+
+초안에는 `expire_all`을 부르는 주체가 없어 스펙 요구가 붕 떠 있었다. 실행자에게 결정을 떠넘기지 않으려고 T8의 startup에 1분 폴링 태스크로 확정해 넣었다. 없으면 어제 걸어 둔 지정가가 오늘 시세에 체결되어 잔고가 거짓이 된다.
 
 **2. 플레이스홀더 스캔**: TBD/TODO 없음. 모든 코드 스텝에 실제 코드가 들어 있다.
 
