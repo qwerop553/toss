@@ -10,7 +10,7 @@ from datetime import datetime
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from paper.broker import Book, Broker, Level, Session
+from paper.broker import Book, Broker, Level, OrderRejected, Session
 
 # 정규장 09:00~15:30. 테스트는 전부 이 안의 시각을 쓴다.
 DAY = datetime(2026, 8, 31, 10, 0, 0)
@@ -182,6 +182,101 @@ def test_다른_종목의_프린트는_무시된다():
     b.place("005930", "buy", "limit", 10, 250_000,
             book=book(), session=SESSION, now=DAY)
     assert b.on_trade("000660", price=100, volume=1000, now=DAY) == []
+
+
+def 거부되는가(fn) -> str:
+    """OrderRejected가 나는지 확인하고 메시지를 돌려준다."""
+    try:
+        fn()
+    except OrderRejected as exc:
+        return str(exc)
+    raise AssertionError("거부됐어야 하는데 통과했다")
+
+
+def test_현금이_모자라면_거부된다():
+    b = new_broker(cash=1_000_000)     # 100만원으로 259,000짜리 10주는 못 산다
+    msg = 거부되는가(lambda: b.place("005930", "buy", "market", 10,
+                                   book=book(), session=SESSION, now=DAY))
+    assert "현금" in msg
+
+
+def test_미체결_매수의_예약금액이_두번째_주문을_막는다():
+    b = new_broker(cash=3_000_000)
+    b.place("005930", "buy", "limit", 10, 250_000,
+            book=book(), session=SESSION, now=DAY)   # 250만원 예약
+    assert b.reserved() == 2_500_000
+    assert b.available_cash() == 500_000
+    msg = 거부되는가(lambda: b.place("005930", "buy", "limit", 10, 250_000,
+                                   book=book(), session=SESSION, now=DAY))
+    assert "현금" in msg
+
+
+def test_취소하면_예약금액이_풀린다():
+    b = new_broker(cash=3_000_000)
+    oid = b.place("005930", "buy", "limit", 10, 250_000,
+                  book=book(), session=SESSION, now=DAY)
+    b.cancel(oid, now=DAY)
+    assert b.order(oid)["status"] == "cancelled"
+    assert b.reserved() == 0
+    assert b.available_cash() == 3_000_000
+
+
+def test_보유하지_않은_종목은_팔_수_없다():
+    b = new_broker()
+    msg = 거부되는가(lambda: b.place("005930", "sell", "market", 10,
+                                   book=book(), session=SESSION, now=DAY))
+    assert "보유" in msg
+
+
+def test_미체결_매도도_보유수량을_묶는다():
+    b = new_broker()
+    b._record_fill(0, "005930", "buy", qty=10, price=250_000, at="t0")
+    b.place("005930", "sell", "limit", 10, 300_000,
+            book=book(), session=SESSION, now=DAY)
+    # 10주 전부 매도 대기 중이므로 더 팔 수 없다
+    msg = 거부되는가(lambda: b.place("005930", "sell", "market", 5,
+                                   book=book(), session=SESSION, now=DAY))
+    assert "보유" in msg
+
+
+def test_호가단위에_맞지_않는_지정가는_거부된다():
+    b = new_broker()
+    msg = 거부되는가(lambda: b.place("005930", "buy", "limit", 1, 258_550,
+                                   book=book(), session=SESSION, now=DAY))
+    assert "호가단위" in msg
+
+
+def test_장_시간_밖_주문은_거부된다():
+    b = new_broker()
+    저녁 = datetime(2026, 8, 31, 16, 0)
+    msg = 거부되는가(lambda: b.place("005930", "buy", "market", 1,
+                                   book=book(), session=SESSION, now=저녁))
+    assert "정규장" in msg
+
+
+def test_수량이_0_이하면_거부된다():
+    b = new_broker()
+    assert "수량" in 거부되는가(lambda: b.place("005930", "buy", "market", 0,
+                                            book=book(), session=SESSION, now=DAY))
+
+
+def test_만료가_미체결을_전부_정리한다():
+    b = new_broker()
+    oid = b.place("005930", "buy", "limit", 10, 250_000,
+                  book=book(), session=SESSION, now=DAY)
+    마감 = datetime(2026, 8, 31, 15, 30)
+    assert b.expire_all(now=마감) == [oid]
+    assert b.order(oid)["status"] == "expired"
+    assert b.reserved() == 0
+
+
+def test_리셋이_주문과_체결을_모두_지운다():
+    b = new_broker()
+    b.place("005930", "buy", "market", 10, book=book(), session=SESSION, now=DAY)
+    b.reset()
+    assert b.cash() == 10_000_000
+    assert b.positions() == {}
+    assert b.orders() == []
 
 
 if __name__ == "__main__":

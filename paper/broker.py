@@ -16,6 +16,8 @@ from dataclasses import dataclass
 from datetime import datetime
 import sqlite3
 
+from paper.ticks import is_valid_price
+
 FEE_RATE = 0.00015    # 수수료. 매수·매도 공통
 TAX_RATE = 0.0020     # 거래세. 매도에만 붙는다
 DEFAULT_CASH = 10_000_000
@@ -203,6 +205,31 @@ class Broker:
             "SELECT * FROM fills WHERE order_id = ? ORDER BY id",
             (order_id,)).fetchall()
 
+    # ------------------------------------------------------ 묶인 자금·수량
+
+    def reserved(self) -> int:
+        """미체결 매수 지정가가 묶어 둔 금액. 없으면 같은 돈으로 여러 번 주문된다."""
+        row = self.conn.execute(
+            "SELECT COALESCE(SUM(limit_price * (qty - filled_qty)), 0) FROM orders "
+            "WHERE status = 'pending' AND side = 'buy' AND limit_price IS NOT NULL"
+        ).fetchone()
+        return int(row[0])
+
+    def available_cash(self) -> int:
+        return self.cash() - self.reserved()
+
+    def reserved_qty(self, symbol: str) -> int:
+        """미체결 매도가 묶어 둔 수량. 같은 주식을 두 번 팔지 못하게 한다."""
+        row = self.conn.execute(
+            "SELECT COALESCE(SUM(qty - filled_qty), 0) FROM orders "
+            "WHERE status = 'pending' AND side = 'sell' AND symbol = ?",
+            (symbol,)).fetchone()
+        return int(row[0])
+
+    def available_qty(self, symbol: str) -> int:
+        held = self.positions().get(symbol)
+        return (held.qty if held else 0) - self.reserved_qty(symbol)
+
     # ---------------------------------------------------------- 주문 접수
 
     def place(self, symbol: str, side: str, type: str, qty: int,
@@ -214,6 +241,8 @@ class Broker:
         시장가는 여기서 호가를 훑어 즉시 체결하고 종료 상태로 끝난다.
         대기하지 않으므로 pending을 거치지 않는다.
         """
+        self._validate(symbol, side, type, qty, limit_price, book, session, now)
+
         at = now.isoformat()
         cur = self.conn.execute(
             "INSERT INTO orders (symbol, side, type, qty, limit_price, status, "
@@ -274,6 +303,91 @@ class Broker:
             status = "cancelled"
         self.conn.execute("UPDATE orders SET status = ?, updated_at = ? WHERE id = ?",
                           (status, at, order_id))
+        self.conn.commit()
+
+    def _validate(self, symbol, side, type, qty, limit_price,
+                  book: Book, session: Session, now: datetime) -> None:
+        """
+        받을 수 없는 주문을 여기서 전부 거른다. 메시지는 그대로 화면에 뜬다.
+
+        검증을 place 안에 흩어 두지 않고 한곳에 모으는 이유는, 주문이 DB에
+        들어간 뒤에 거부되면 주문번호만 남고 아무 일도 일어나지 않은 유령
+        주문이 주문장에 쌓이기 때문이다.
+        """
+        if qty <= 0:
+            raise OrderRejected("수량은 1주 이상이어야 합니다.")
+        if side not in ("buy", "sell"):
+            raise OrderRejected(f"알 수 없는 주문 방향입니다: {side}")
+        if type not in ("market", "limit"):
+            raise OrderRejected(f"알 수 없는 주문 유형입니다: {type}")
+
+        if not session.is_open(now):
+            raise OrderRejected(
+                "정규장(09:00~15:30)에만 주문할 수 있습니다. "
+                "시간외단일가는 지원하지 않습니다.")
+
+        if type == "limit":
+            if limit_price is None:
+                raise OrderRejected("지정가 주문에는 가격이 필요합니다.")
+            if not is_valid_price(limit_price):
+                raise OrderRejected(
+                    f"{limit_price:,}원은 호가단위에 맞지 않습니다.")
+
+        if side == "buy":
+            # 시장가는 지정가가 없으므로 호가를 훑어 실제로 들 돈을 계산한다.
+            need = (limit_price * qty if type == "limit"
+                    else self._sweep_cost(book, qty))
+            if need > self.available_cash():
+                raise OrderRejected(
+                    f"주문가능현금이 부족합니다. "
+                    f"필요 {need:,}원 / 가능 {self.available_cash():,}원")
+        else:
+            if qty > self.available_qty(symbol):
+                raise OrderRejected(
+                    f"보유수량이 부족합니다. "
+                    f"주문 {qty}주 / 가능 {self.available_qty(symbol)}주")
+
+    def _sweep_cost(self, book: Book, qty: int) -> int:
+        """시장가 매수가 호가를 훑을 때 실제로 나갈 금액(수수료 포함)."""
+        remaining, cost = qty, 0
+        for level in book.asks:
+            if remaining <= 0:
+                break
+            take = min(remaining, level.volume)
+            cost += take * level.price
+            remaining -= take
+        return cost + round(cost * FEE_RATE)
+
+    # ------------------------------------------------------ 취소·만료·리셋
+
+    def cancel(self, order_id: int, now: datetime) -> None:
+        row = self.order(order_id)
+        if row is None:
+            raise OrderRejected(f"없는 주문입니다: {order_id}")
+        if row["status"] != "pending":
+            raise OrderRejected(
+                f"이미 종료된 주문은 취소할 수 없습니다 (상태: {row['status']}).")
+        self.conn.execute(
+            "UPDATE orders SET status = 'cancelled', updated_at = ? WHERE id = ?",
+            (now.isoformat(), order_id))
+        self.conn.commit()
+
+    def expire_all(self, now: datetime) -> list[int]:
+        """장 마감 시 미체결 주문을 전부 만료시킨다. 만료된 주문 id 목록을 돌려준다."""
+        ids = [r["id"] for r in self.open_orders()]
+        if ids:
+            self.conn.executemany(
+                "UPDATE orders SET status = 'expired', updated_at = ? WHERE id = ?",
+                [(now.isoformat(), i) for i in ids])
+            self.conn.commit()
+        return ids
+
+    def reset(self, initial_cash: int | None = None) -> None:
+        """주문·체결을 전부 지우고 초기자본으로 되돌린다. 관심종목은 남긴다."""
+        cash = initial_cash if initial_cash is not None else self.initial_cash()
+        self.conn.execute("DELETE FROM fills")
+        self.conn.execute("DELETE FROM orders")
+        self.conn.execute("UPDATE account SET initial_cash = ? WHERE id = 1", (cash,))
         self.conn.commit()
 
     # ------------------------------------------------------ 시장 이벤트
