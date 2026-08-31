@@ -44,6 +44,19 @@ def test_호가_이벤트_파싱():
     assert data["bids"][0].volume == 80
 
 
+def test_필드가_빠지거나_숫자가_아닌_프레임에도_터지지_않는다():
+    # parse_event가 예외를 던지면 run()의 `async for`를 뚫고 나가 연결이
+    # 통째로 끊기고, 끊긴 동안 지정가 체결 판정이 멈춘다. 프레임 하나는 버리고
+    # 연결은 지켜야 한다.
+    assert parse_event('{"type":"message","topic":"trade:kr:005930",'
+                       '"data":{"volume":"12"}}') is None            # price 없음
+    assert parse_event('{"type":"message","topic":"trade:kr:005930",'
+                       '"data":{"price":"abc","volume":"1"}}') is None  # 숫자 아님
+    assert parse_event('{"type":"message","topic":"orderbook:kr:005930",'
+                       '"data":{"asks":[{"price":"100"}],"bids":[]}}') is None
+    assert parse_event('{"type":"message","topic":"trade:kr:005930"}') is None
+
+
 def test_pong과_알수없는_메시지는_None():
     assert parse_event('{"type":"pong"}') is None
     assert parse_event('{"type":"message","topic":"trade:us:AAPL","data":{}}') is None

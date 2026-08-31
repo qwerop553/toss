@@ -60,14 +60,21 @@ def parse_event(raw: str):
     channel, _, symbol = parts
     data = msg.get("data") or {}
 
-    if channel == "trade":
-        return "trade", symbol, {"price": int(data["price"]),
-                                 "volume": int(data["volume"]),
-                                 "timestamp": data.get("timestamp")}
-    if channel == "orderbook":
-        lv = lambda side: [Level(int(x["price"]), int(x["volume"]))
-                           for x in data.get(side, [])]
-        return "orderbook", symbol, {"asks": lv("asks"), "bids": lv("bids")}
+    # 필드가 빠졌거나 숫자가 아닌 프레임이 와도 절대 예외를 내보내지 않는다.
+    # 여기서 던지면 그 예외가 run()의 `async for`를 뚫고 나가 연결이 통째로
+    # 끊기고, 끊긴 동안 지정가 체결 판정이 멈춘다 — 이 설계에서 가장 위험한
+    # 조용한 실패다. 프레임 하나를 버리는 편이 압도적으로 싸다.
+    try:
+        if channel == "trade":
+            return "trade", symbol, {"price": int(data["price"]),
+                                     "volume": int(data["volume"]),
+                                     "timestamp": data.get("timestamp")}
+        if channel == "orderbook":
+            lv = lambda side: [Level(int(x["price"]), int(x["volume"]))
+                               for x in data.get(side, [])]
+            return "orderbook", symbol, {"asks": lv("asks"), "bids": lv("bids")}
+    except (KeyError, ValueError, TypeError):
+        return None
     return None
 
 
@@ -94,8 +101,14 @@ class Feed:
         if self._ws is None:
             return
         self._seq += 1
-        await self._ws.send(json.dumps(
-            build_declaration(self._symbols, f"req-{self._seq}")))
+        try:
+            await self._ws.send(json.dumps(
+                build_declaration(self._symbols, f"req-{self._seq}")))
+        except Exception as exc:
+            # set_symbols가 이 코루틴을 fire-and-forget으로 띄우므로 예외를
+            # 받아 줄 사람이 없다. 여기서 알리지 않으면 구독 선언이 조용히
+            # 실패하고 화면은 멈춘 값을 계속 보여준다.
+            self.on_status("error", f"구독 선언 실패: {type(exc).__name__}: {exc}")
 
     async def _keepalive(self) -> None:
         # 순수 텍스트 'PING'이다. JSON으로 감싸면 서버가 못 알아듣는다.
