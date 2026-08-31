@@ -425,9 +425,13 @@ class Broker:
         out: list[Fill] = []
         remaining_print = volume
 
+        # limit_price IS NOT NULL 필수: 시장가 주문도 스윕 전에는 잠깐
+        # status='pending'으로 커밋돼 있고 그 행의 limit_price가 NULL이다.
+        # 걸러내지 않으면 아래에서 price > limit을 None과 비교하다 TypeError로
+        # 죽고, 그 예외가 웹소켓 루프까지 뚫고 나가 연결이 끊긴다.
         rows = self.conn.execute(
             "SELECT * FROM orders WHERE status = 'pending' AND symbol = ? "
-            "ORDER BY id", (symbol,)).fetchall()
+            "AND limit_price IS NOT NULL ORDER BY id", (symbol,)).fetchall()
 
         for row in rows:
             if remaining_print <= 0:

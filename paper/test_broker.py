@@ -321,6 +321,25 @@ def test_리셋은_관심종목을_남긴다():
     assert b.conn.execute("SELECT COUNT(*) FROM watchlist").fetchone()[0] == 1
 
 
+def test_체결_판정은_limit_price가_NULL인_시장가_행을_건드리지_않는다():
+    # 회귀 테스트. on_trade의 조회는 원래 status='pending' AND symbol=?만
+    # 걸렀는데, 시장가 주문도 스윕 전에는 잠깐 그 조건에 걸리고 limit_price가
+    # NULL이다. 그 행이 걸러지지 않으면 price > limit을 None과 비교하다
+    # TypeError가 나서(파이썬은 None과 int를 비교할 수 없다) 웹소켓 콜백을
+    # 뚫고 나가 feed 연결이 죽는다.
+    b = new_broker()
+    b.conn.execute(
+        "INSERT INTO orders (symbol, side, type, qty, limit_price, status, "
+        "                    filled_qty, created_at, updated_at) "
+        "VALUES ('005930','buy','market',10,NULL,'pending',0,'t','t')")
+    b.conn.commit()
+    fills = b.on_trade("005930", price=259_000, volume=100, now=DAY)
+    assert fills == []
+    row = b.conn.execute(
+        "SELECT filled_qty, status FROM orders WHERE symbol='005930'").fetchone()
+    assert row[0] == 0 and row[1] == "pending"
+
+
 if __name__ == "__main__":
     for name, fn in sorted(globals().items()):
         if name.startswith("test_"):

@@ -9,7 +9,7 @@
 
 숫자는 전부 문자열로 오므로 파싱 시점에 int로 바꾼다.
 """
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 
 import requests
 
@@ -55,15 +55,30 @@ def parse_orderbook(symbol: str, body: dict) -> Book:
     return Book(symbol=symbol, asks=lv("asks"), bids=lv("bids"))
 
 
+KST = timezone(timedelta(hours=9))
+
+
 def parse_session(body: dict) -> Session | None:
-    """오늘의 정규장 구간. 휴장이면 None."""
+    """
+    오늘의 정규장 구간. 휴장이면 None.
+
+    startTime/endTime에 오프셋이 안 붙어 오면 fromisoformat이 naive datetime을
+    돌려주는데, 그러면 나중에 tz-aware한 현재 시각과 비교할 때(Session.is_open)
+    naive와 aware를 섞어 TypeError가 난다. 장이 KST로 운영되므로 그 경우
+    KST를 붙인다.
+    """
     today = body["result"]["today"]
     integrated = today.get("integrated")
     if not integrated:
         return None
     reg = integrated["regularMarket"]
-    return Session(start=datetime.fromisoformat(reg["startTime"]),
-                   end=datetime.fromisoformat(reg["endTime"]))
+    start = datetime.fromisoformat(reg["startTime"])
+    end = datetime.fromisoformat(reg["endTime"])
+    if start.tzinfo is None:
+        start = start.replace(tzinfo=KST)
+    if end.tzinfo is None:
+        end = end.replace(tzinfo=KST)
+    return Session(start=start, end=end)
 
 
 def get_prices(symbols: list[str]) -> dict[str, int]:
