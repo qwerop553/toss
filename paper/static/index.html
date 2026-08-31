@@ -1,0 +1,264 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>모의투자</title>
+<style>
+  :root { --up:#d24; --down:#25c; --line:#e3e3e6; --muted:#777; }
+  * { box-sizing: border-box; }
+  body { margin:0; font:13px/1.5 "Malgun Gothic", system-ui, sans-serif; color:#111; }
+  #banner { display:none; padding:8px 12px; background:#c0392b; color:#fff; font-weight:600; }
+  #banner.on { display:block; }
+  #notice { display:none; padding:6px 12px; background:#fff3cd; color:#7a5b00; font-size:12px; }
+  #notice.on { display:block; }
+  #grid { display:grid; grid-template-columns:220px 1fr 320px; height:calc(100vh - 0px); }
+  .pane { border-right:1px solid var(--line); overflow:auto; padding:10px; }
+  .pane:last-child { border-right:0; }
+  h2 { font-size:12px; color:var(--muted); margin:14px 0 6px; letter-spacing:.04em; }
+  table { width:100%; border-collapse:collapse; }
+  td, th { padding:3px 4px; text-align:right; white-space:nowrap; }
+  th { color:var(--muted); font-weight:500; font-size:11px; }
+  td:first-child, th:first-child { text-align:left; }
+  tr.sel { background:#eef4ff; }
+  .ask { color:var(--down); } .bid { color:var(--up); }
+  .book td { cursor:pointer; }
+  .book .vol { color:var(--muted); }
+  input, select, button { font:inherit; padding:4px 6px; }
+  input { width:100%; }
+  button { cursor:pointer; }
+  .buy { background:var(--up); color:#fff; border:0; padding:8px; width:100%; }
+  .sell { background:var(--down); color:#fff; border:0; padding:8px; width:100%; }
+  .row { display:flex; gap:6px; margin:4px 0; align-items:center; }
+  .row label { width:56px; color:var(--muted); }
+  #chart { height:260px; border:1px solid var(--line); }
+  .note { color:var(--muted); font-size:11px; margin-top:4px; min-height:14px; }
+  .pos { color:var(--up); } .neg { color:var(--down); }
+  .err { color:#c0392b; min-height:18px; margin-top:6px; }
+</style>
+
+<div id="banner"></div>
+<div id="notice"></div>
+<div id="grid">
+  <div class="pane">
+    <div class="row"><input id="add" placeholder="종목코드 추가 (예 005930)"></div>
+    <h2>관심종목</h2>
+    <table><tbody id="watch"></tbody></table>
+  </div>
+
+  <div class="pane">
+    <h2 id="title">종목을 고르세요</h2>
+    <div id="chart"></div>
+    <div class="note" id="candlesNote"></div>
+    <h2>호가</h2>
+    <table class="book"><tbody id="book"></tbody></table>
+  </div>
+
+  <div class="pane">
+    <h2>주문</h2>
+    <div class="row"><label>유형</label>
+      <select id="otype"><option value="limit">지정가</option><option value="market">시장가</option></select>
+    </div>
+    <div class="row"><label>가격</label><input id="oprice" type="number" step="1"></div>
+    <div class="row"><label>수량</label><input id="oqty" type="number" min="1" value="1"></div>
+    <div class="row">
+      <button class="buy" onclick="order('buy')">매수</button>
+      <button class="sell" onclick="order('sell')">매도</button>
+    </div>
+    <div class="err" id="err"></div>
+
+    <h2>미체결</h2>
+    <table><tbody id="open"></tbody></table>
+
+    <h2>보유</h2>
+    <table>
+      <tr><th>종목</th><th>수량</th><th>평단</th><th>손익</th></tr>
+      <tbody id="pos"></tbody>
+    </table>
+    <h2>현금</h2>
+    <div id="cash"></div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"
+        onerror="window.__nochart=1"></script>
+<script>
+// null/undefined는 "값을 모른다"는 뜻이라 0으로 뭉개면 안 된다 (예: 미체결
+// 시장가 주문의 limit_price, 시세를 아직 못 받은 보유 종목의 price/pnl).
+// 대시로 표시해 숫자 0과 구분한다.
+const won = n => n == null ? "—" : n.toLocaleString("ko-KR");
+let symbol = null, series = null;
+
+// ---- 연결 상태 배너. 끊긴 동안 지정가 체결 판정이 멈추므로 반드시 보인다.
+function banner(status, message) {
+  const el = document.getElementById("banner");
+  if (status === "connected") { el.className = ""; return; }
+  el.className = "on";
+  el.textContent = status === "reconnecting"
+    ? "실시간 연결 끊김 — 지정가 체결이 중단됩니다. 재접속 중… " + (message || "")
+    : "연결 오류: " + (message || status);
+}
+
+// ---- 잠깐 떴다 사라지는 안내(장 마감 만료 등). 배너와 달리 상태가 아니라
+// 1회성 이벤트라 몇 초 후 자동으로 닫는다.
+let noticeTimer = null;
+function notice(msg) {
+  const el = document.getElementById("notice");
+  el.textContent = msg;
+  el.className = "on";
+  clearTimeout(noticeTimer);
+  noticeTimer = setTimeout(() => { el.className = ""; }, 6000);
+}
+
+// ---- 차트. CDN이 막히면 차트만 빠지고 매매는 계속 된다.
+function initChart() {
+  if (window.__nochart || !window.LightweightCharts) {
+    document.getElementById("chart").textContent = "차트를 불러오지 못했습니다 (매매는 정상)";
+    return null;
+  }
+  const c = LightweightCharts.createChart(document.getElementById("chart"),
+    { height: 260, layout: { attributionLogo: false } });
+  return c.addCandlestickSeries();
+}
+
+async function api(path, opts) {
+  const r = await fetch(path, opts);
+  const body = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(body.detail || r.statusText);
+  // /api/candles는 캔들 수집이 실패해도 본문은 그대로 배열을 돌려주고(차트
+  // 코드가 바로 map()으로 소비하므로 형태를 바꾸면 안 된다) 실패 사실만 이
+  // 헤더에 담아 보낸다. 치명적이지 않으니(예전 캔들이 남아 있을 수 있다)
+  // 차트 옆에 작은 안내만 띄운다.
+  const candlesErr = r.headers.get("X-Candles-Error");
+  if (candlesErr) {
+    document.getElementById("candlesNote").textContent =
+      "최신 분봉을 갱신하지 못했습니다 — 이전에 저장된 캔들을 표시합니다.";
+  }
+  return body;
+}
+
+async function loadWatch() {
+  const rows = await api("/api/watchlist");
+  document.getElementById("watch").innerHTML = rows.map(r => `
+    <tr class="${r.symbol === symbol ? "sel" : ""}" onclick="select('${r.symbol}')">
+      <td>${r.name}</td><td>${won(r.price)}</td>
+      <td><button onclick="event.stopPropagation();remove('${r.symbol}')">×</button></td>
+    </tr>`).join("");
+}
+
+async function select(s) {
+  symbol = s;
+  document.getElementById("title").textContent = s;
+  document.getElementById("candlesNote").textContent = "";
+  await loadWatch();
+  await loadBook();
+  if (series) {
+    const candles = await api("/api/candles?symbol=" + s);
+    series.setData(candles.map(c => ({
+      time: Math.floor(new Date(c.time).getTime() / 1000),
+      open: c.open, high: c.high, low: c.low, close: c.close })));
+  }
+}
+
+async function loadBook() {
+  if (!symbol) return;
+  drawBook(await api("/api/quote?symbol=" + symbol));
+}
+
+function drawBook(q) {
+  const ask = [...q.asks].reverse().map(([p, v]) =>
+    `<tr><td class="vol"></td><td class="ask" onclick="pick(${p})">${won(p)}</td><td class="vol">${won(v)}</td></tr>`);
+  const bid = q.bids.map(([p, v]) =>
+    `<tr><td class="vol">${won(v)}</td><td class="bid" onclick="pick(${p})">${won(p)}</td><td class="vol"></td></tr>`);
+  document.getElementById("book").innerHTML = ask.join("") + bid.join("");
+}
+
+const pick = p => document.getElementById("oprice").value = p;
+
+async function order(side) {
+  const err = document.getElementById("err");
+  err.textContent = "";
+  if (!symbol) { err.textContent = "종목을 먼저 고르세요."; return; }
+  const type = document.getElementById("otype").value;
+  const body = { symbol, side, type, qty: +document.getElementById("oqty").value };
+  if (type === "limit") body.limit_price = +document.getElementById("oprice").value;
+  try {
+    await api("/api/orders", { method: "POST",
+      headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    await loadOpen();
+  } catch (e) { err.textContent = e.message; }
+}
+
+async function loadOpen() {
+  const rows = await api("/api/orders?status=pending");
+  document.getElementById("open").innerHTML = rows.map(o => `
+    <tr><td>${o.symbol}</td>
+        <td class="${o.side === "buy" ? "pos" : "neg"}">${o.side === "buy" ? "매수" : "매도"}</td>
+        <td>${won(o.limit_price)}</td>
+        <td>${o.filled_qty}/${o.qty}</td>
+        <td><button onclick="cancel(${o.id})">취소</button></td></tr>`).join("");
+}
+
+async function cancel(id) {
+  await api("/api/orders/" + id, { method: "DELETE" });
+  await loadOpen();
+}
+
+async function remove(s) {
+  await api("/api/watchlist", { method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ symbol: s, action: "remove" }) });
+  if (symbol === s) symbol = null;
+  await loadWatch();
+}
+
+document.getElementById("add").addEventListener("keydown", async e => {
+  if (e.key !== "Enter") return;
+  const s = e.target.value.trim();
+  if (!s) return;
+  try {
+    await api("/api/watchlist", { method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ symbol: s, action: "add" }) });
+    e.target.value = "";
+    await loadWatch();
+  } catch (err) { document.getElementById("err").textContent = err.message; }
+});
+
+function drawPortfolio(p) {
+  document.getElementById("pos").innerHTML = p.positions.map(x => {
+    // price/pnl/pnl_pct는 아직 시세를 못 받은 보유 종목이면 null로 온다
+    // (0으로 뭉치면 "-100% 손실"처럼 없는 손실이 찍힌다). 그럴 땐 대시만
+    // 보여주고 빨강/파랑 색도 칠하지 않는다.
+    const cls = x.pnl == null ? "" : (x.pnl >= 0 ? "pos" : "neg");
+    const pnl = x.pnl == null ? "—" : `${won(x.pnl)} (${x.pnl_pct}%)`;
+    return `<tr><td>${x.symbol}</td><td>${x.qty}</td><td>${won(x.avg_cost)}</td>
+        <td class="${cls}">${pnl}</td></tr>`;
+  }).join("");
+  document.getElementById("cash").innerHTML =
+    `보유현금 ${won(p.cash)}원<br>주문가능 ${won(p.available)}원<br>주문묶임 ${won(p.reserved)}원`;
+}
+
+// ---- 서버 푸시
+const ws = new WebSocket(`ws://${location.host}/ws`);
+ws.onmessage = ev => {
+  const m = JSON.parse(ev.data);
+  if (m.type === "feed") banner(m.status, m.message);
+  else if (m.type === "portfolio") drawPortfolio(m);
+  else if (m.type === "orderbook" && m.symbol === symbol) drawBook(m);
+  else if (m.type === "trade") { if (m.symbol === symbol) loadWatchThrottled(); }
+  else if (m.type === "fill") { loadOpen(); }
+  else if (m.type === "expired") {
+    loadOpen();
+    notice("장 마감으로 미체결 주문이 만료되었습니다.");
+  }
+};
+ws.onclose = () => banner("reconnecting", "브라우저 연결이 끊겼습니다. 새로고침하세요.");
+
+let watchTimer = null;
+function loadWatchThrottled() {
+  if (watchTimer) return;
+  watchTimer = setTimeout(() => { watchTimer = null; loadWatch(); }, 2000);
+}
+
+series = initChart();
+loadWatch();
+loadOpen();
+</script>
