@@ -144,12 +144,26 @@ async function api(path, opts) {
 
 async function loadWatch() {
   const rows = await api("/api/watchlist");
+  // 행마다 onclick 문자열을 조립하지 않는다. HTML 속성값은 인라인 핸들러의
+  // JS로 컴파일되기 전에 엔티티 디코딩되므로("&#39;" → "'"), esc()를 거쳐도
+  // onclick="select('...')" 안에서는 문자열을 탈출할 수 있다 — 값은 data
+  // 속성으로만 넘기고 핸들러는 코드로 붙인다(아래 watchClick 델리게이션).
   document.getElementById("watch").innerHTML = rows.map(r => `
-    <tr class="${r.symbol === symbol ? "sel" : ""}" onclick="select('${esc(r.symbol)}')">
+    <tr class="${r.symbol === symbol ? "sel" : ""}" data-symbol="${esc(r.symbol)}">
       <td>${esc(r.name)}</td><td>${won(r.price)}</td>
-      <td><button onclick="event.stopPropagation();remove('${esc(r.symbol)}')">×</button></td>
+      <td><button class="del" data-symbol="${esc(r.symbol)}">×</button></td>
     </tr>`).join("");
 }
+
+// ---- 관심종목 목록에 위임 리스너 하나만 붙인다. loadWatch()가 매번
+// innerHTML을 다시 그리므로, 리스너를 그 안에서 붙이면 다시 그릴 때마다
+// 리스너가 겹겹이 쌓여 클릭 한 번에 핸들러가 N번 불린다 — 시작할 때 한 번만.
+document.getElementById("watch").addEventListener("click", ev => {
+  const del = ev.target.closest("button.del");
+  if (del) { ev.stopPropagation(); remove(del.dataset.symbol); return; }
+  const row = ev.target.closest("tr[data-symbol]");
+  if (row) select(row.dataset.symbol);
+});
 
 async function select(s) {
   symbol = s;
