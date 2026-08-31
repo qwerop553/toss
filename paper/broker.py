@@ -226,6 +226,12 @@ class Broker:
         if type == "market":
             self._sweep(order_id, symbol, side, qty, book, at, limit=None)
             self._settle(order_id, at)
+        else:
+            # 지정가: 지금 이미 유리하면 즉시 체결한다. 실제 거래소도 그렇다.
+            # 다 못 채운 잔량은 pending으로 남아 체결 프린트를 기다린다.
+            filled = self._sweep(order_id, symbol, side, qty, book, at, limit=limit_price)
+            if filled >= qty:
+                self._settle(order_id, at)
 
         return order_id
 
@@ -269,3 +275,51 @@ class Broker:
         self.conn.execute("UPDATE orders SET status = ?, updated_at = ? WHERE id = ?",
                           (status, at, order_id))
         self.conn.commit()
+
+    # ------------------------------------------------------ 시장 이벤트
+
+    def on_trade(self, symbol: str, price: int, volume: int,
+                 now: datetime) -> list[Fill]:
+        """
+        체결 프린트 하나를 받아 대기 중인 지정가를 판정한다.
+
+        매수는 프린트 가격이 지정가 이하일 때, 매도는 이상일 때 체결된다.
+        체결가는 내 지정가가 아니라 실제 프린트된 가격이다 — 유리한 쪽으로
+        체결되는 실제 규칙과 맞다.
+
+        ponytail: 큐 포지션을 모델링하지 않는다. 내 앞에 줄 서 있던 물량을
+        무시하므로 실제보다 잘 체결된다. 호가 잔량의 변화를 추적하면 개선할
+        수 있지만 이 사이트의 목적을 넘는다.
+        """
+        at = now.isoformat()
+        out: list[Fill] = []
+        remaining_print = volume
+
+        rows = self.conn.execute(
+            "SELECT * FROM orders WHERE status = 'pending' AND symbol = ? "
+            "ORDER BY id", (symbol,)).fetchall()
+
+        for row in rows:
+            if remaining_print <= 0:
+                break
+            limit = row["limit_price"]
+            if row["side"] == "buy" and price > limit:
+                continue
+            if row["side"] == "sell" and price < limit:
+                continue
+
+            want = row["qty"] - row["filled_qty"]
+            take = min(want, remaining_print)
+            if take <= 0:
+                continue
+
+            out.append(self._record_fill(row["id"], symbol, row["side"],
+                                         take, price, at))
+            remaining_print -= take
+
+            if row["filled_qty"] + take >= row["qty"]:
+                self.conn.execute(
+                    "UPDATE orders SET status = 'filled', updated_at = ? WHERE id = ?",
+                    (at, row["id"]))
+        self.conn.commit()
+        return out

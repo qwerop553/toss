@@ -114,6 +114,76 @@ def test_시장가는_pending을_거치지_않는다():
     assert b.open_orders() == []
 
 
+def test_불리한_지정가는_pending으로_남는다():
+    b = new_broker()
+    # 매도1호가가 259,000인데 250,000에 사겠다고 걸어 둔다
+    oid = b.place("005930", "buy", "limit", 10, 250_000,
+                  book=book(), session=SESSION, now=DAY)
+    assert b.order(oid)["status"] == "pending"
+    assert b.order(oid)["filled_qty"] == 0
+    assert len(b.open_orders()) == 1
+
+
+def test_이미_유리한_지정가는_즉시_체결된다():
+    b = new_broker(100_000_000)
+    # 매도1호가 259,000보다 높은 260,000에 사겠다면 지금 바로 체결된다
+    oid = b.place("005930", "buy", "limit", 50, 260_000,
+                  book=book(), session=SESSION, now=DAY)
+    assert b.order(oid)["status"] == "filled"
+    assert b.fills_of(oid)[0]["price"] == 259_000   # 내 지정가가 아니라 호가에 체결
+
+
+def test_지정가가_체결_프린트로_채워진다():
+    b = new_broker()
+    oid = b.place("005930", "buy", "limit", 10, 250_000,
+                  book=book(), session=SESSION, now=DAY)
+    # 250,000 아래로 체결이 프린트되면 채워진다
+    fills = b.on_trade("005930", price=249_500, volume=100, now=DAY)
+    assert len(fills) == 1
+    assert fills[0].qty == 10
+    assert fills[0].price == 249_500      # 프린트 가격에 체결
+    assert b.order(oid)["status"] == "filled"
+    assert b.open_orders() == []
+
+
+def test_지정가_부분체결은_pending으로_남는다():
+    b = new_broker(100_000_000)
+    oid = b.place("005930", "buy", "limit", 100, 250_000,
+                  book=book(), session=SESSION, now=DAY)
+    b.on_trade("005930", price=250_000, volume=30, now=DAY)
+    row = b.order(oid)
+    assert row["filled_qty"] == 30
+    # 아직 더 체결될 수 있으므로 partial이 아니라 pending이다
+    assert row["status"] == "pending"
+    b.on_trade("005930", price=249_000, volume=70, now=DAY)
+    assert b.order(oid)["status"] == "filled"
+
+
+def test_불리한_프린트는_지정가를_건드리지_않는다():
+    b = new_broker()
+    b.place("005930", "buy", "limit", 10, 250_000,
+            book=book(), session=SESSION, now=DAY)
+    assert b.on_trade("005930", price=251_000, volume=100, now=DAY) == []
+
+
+def test_매도_지정가는_프린트가_지정가_이상일_때_체결된다():
+    b = new_broker()
+    b._record_fill(0, "005930", "buy", qty=10, price=250_000, at="t0")
+    oid = b.place("005930", "sell", "limit", 10, 270_000,
+                  book=book(), session=SESSION, now=DAY)
+    assert b.order(oid)["status"] == "pending"
+    assert b.on_trade("005930", price=269_000, volume=100, now=DAY) == []
+    fills = b.on_trade("005930", price=271_000, volume=100, now=DAY)
+    assert len(fills) == 1 and fills[0].price == 271_000
+
+
+def test_다른_종목의_프린트는_무시된다():
+    b = new_broker()
+    b.place("005930", "buy", "limit", 10, 250_000,
+            book=book(), session=SESSION, now=DAY)
+    assert b.on_trade("000660", price=100, volume=1000, now=DAY) == []
+
+
 if __name__ == "__main__":
     for name, fn in sorted(globals().items()):
         if name.startswith("test_"):
