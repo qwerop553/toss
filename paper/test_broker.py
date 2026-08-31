@@ -71,6 +71,49 @@ def test_평균단가는_총평균법이고_매도해도_변하지_않는다():
     assert abs(pos.avg_cost - avg_before) < 1e-6   # 매도는 평균단가를 안 건드린다
 
 
+def test_시장가_매수가_호가를_다단으로_훑는다():
+    b = new_broker(100_000_000)
+    # 259,000에 100주, 259,500에 50주 있는 호가에 120주 시장가 매수
+    oid = b.place("005930", "buy", "market", 120,
+                  book=book(), session=SESSION, now=DAY)
+    fills = b.fills_of(oid)
+    assert len(fills) == 2
+    assert (fills[0]["price"], fills[0]["qty"]) == (259_000, 100)
+    assert (fills[1]["price"], fills[1]["qty"]) == (259_500, 20)
+    assert b.order(oid)["status"] == "filled"
+    assert b.positions()["005930"].qty == 120
+
+
+def test_호가가_모자라면_채운_만큼만_체결하고_끝낸다():
+    b = new_broker(100_000_000)
+    # 호가 전체가 150주뿐인데 200주를 시장가로 산다
+    oid = b.place("005930", "buy", "market", 200,
+                  book=book(), session=SESSION, now=DAY)
+    assert b.order(oid)["filled_qty"] == 150
+    # partial은 종료 상태다. 남은 50주는 대기하지 않는다.
+    assert b.order(oid)["status"] == "partial"
+
+
+def test_시장가_매도는_매수호가를_훑는다():
+    b = new_broker()
+    b._record_fill(0, "005930", "buy", qty=100, price=250_000, at="t0")
+    oid = b.place("005930", "sell", "market", 100,
+                  book=book(), session=SESSION, now=DAY)
+    fills = b.fills_of(oid)
+    assert (fills[0]["price"], fills[0]["qty"]) == (258_500, 80)
+    assert (fills[1]["price"], fills[1]["qty"]) == (258_000, 20)
+    assert b.order(oid)["status"] == "filled"
+    assert "005930" not in b.positions()
+
+
+def test_시장가는_pending을_거치지_않는다():
+    b = new_broker(100_000_000)
+    oid = b.place("005930", "buy", "market", 10,
+                  book=book(), session=SESSION, now=DAY)
+    assert b.order(oid)["status"] == "filled"
+    assert b.open_orders() == []
+
+
 if __name__ == "__main__":
     for name, fn in sorted(globals().items()):
         if name.startswith("test_"):

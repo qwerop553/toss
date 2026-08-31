@@ -180,3 +180,92 @@ class Broker:
             "WHERE id = ?", (qty, at, order_id))
         self.conn.commit()
         return Fill(order_id, symbol, side, qty, price, fee, tax, at)
+
+    # ---------------------------------------------------------- 주문 조회
+
+    def order(self, order_id: int) -> sqlite3.Row:
+        return self.conn.execute(
+            "SELECT * FROM orders WHERE id = ?", (order_id,)).fetchone()
+
+    def orders(self, status: str | None = None) -> list[sqlite3.Row]:
+        if status:
+            return self.conn.execute(
+                "SELECT * FROM orders WHERE status = ? ORDER BY id DESC",
+                (status,)).fetchall()
+        return self.conn.execute(
+            "SELECT * FROM orders ORDER BY id DESC").fetchall()
+
+    def open_orders(self) -> list[sqlite3.Row]:
+        return self.orders("pending")
+
+    def fills_of(self, order_id: int) -> list[sqlite3.Row]:
+        return self.conn.execute(
+            "SELECT * FROM fills WHERE order_id = ? ORDER BY id",
+            (order_id,)).fetchall()
+
+    # ---------------------------------------------------------- 주문 접수
+
+    def place(self, symbol: str, side: str, type: str, qty: int,
+              limit_price: int | None = None, *,
+              book: Book, session: Session, now: datetime) -> int:
+        """
+        주문을 접수하고 주문 id를 돌려준다.
+
+        시장가는 여기서 호가를 훑어 즉시 체결하고 종료 상태로 끝난다.
+        대기하지 않으므로 pending을 거치지 않는다.
+        """
+        at = now.isoformat()
+        cur = self.conn.execute(
+            "INSERT INTO orders (symbol, side, type, qty, limit_price, status, "
+            "                    filled_qty, created_at, updated_at) "
+            "VALUES (?,?,?,?,?,'pending',0,?,?)",
+            (symbol, side, type, qty, limit_price, at, at))
+        order_id = cur.lastrowid
+        self.conn.commit()
+
+        if type == "market":
+            self._sweep(order_id, symbol, side, qty, book, at, limit=None)
+            self._settle(order_id, at)
+
+        return order_id
+
+    def _sweep(self, order_id: int, symbol: str, side: str, qty: int,
+               book: Book, at: str, limit: int | None) -> int:
+        """
+        호가를 위에서부터 훑어 체결한다. 체결된 수량을 돌려준다.
+
+        limit이 주어지면 그 가격보다 불리한 호가에서 멈춘다 (지정가의 즉시체결).
+        limit이 None이면 잔량이 다 찰 때까지, 또는 호가가 소진될 때까지 훑는다.
+        """
+        levels = book.asks if side == "buy" else book.bids
+        remaining = qty
+        for level in levels:
+            if remaining <= 0:
+                break
+            if limit is not None:
+                if side == "buy" and level.price > limit:
+                    break
+                if side == "sell" and level.price < limit:
+                    break
+            take = min(remaining, level.volume)
+            if take <= 0:
+                continue
+            self._record_fill(order_id, symbol, side, take, level.price, at)
+            remaining -= take
+        return qty - remaining
+
+    def _settle(self, order_id: int, at: str) -> None:
+        """
+        더 이상 체결될 수 없는 주문의 최종 상태를 정한다.
+
+        partial은 종료 상태다. 부분체결된 지정가가 아직 대기 중인 경우는
+        pending으로 남고 filled_qty만 0보다 크다 — 이 둘을 같은 status로
+        뭉치면 주문장에서 '아직 체결될 수 있는 주문'을 구분할 수 없다.
+        """
+        row = self.order(order_id)
+        status = "filled" if row["filled_qty"] >= row["qty"] else "partial"
+        if row["filled_qty"] == 0:
+            status = "cancelled"
+        self.conn.execute("UPDATE orders SET status = ?, updated_at = ? WHERE id = ?",
+                          (status, at, order_id))
+        self.conn.commit()
