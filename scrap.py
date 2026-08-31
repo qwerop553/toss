@@ -30,7 +30,7 @@ def update_candles(ticker: str, interval: str = "1m",
     주어진 ticker의 1분봉을 받아서 DB에 저장한다.
     토큰 발급/갱신은 내부적으로 처리되므로 호출부는 신경 쓸 필요 없음.
     """
-    access_token = _get_access_token()
+    access_token = get_access_token()
     conn = _get_conn(db_path)
     last_ts = get_last_timestamp(conn, ticker, interval)
 
@@ -109,7 +109,7 @@ def check_tickers(tickers: list[str], interval: str = "1m") -> list[str]:
     전체 수집은 종목당 1분 반이 걸리므로, 오타난 코드는 여기서 먼저 걸러야 한다.
     반환값은 '데이터가 없는 코드' 목록이다.
     """
-    token = _get_access_token()
+    token = get_access_token()
     bad = []
     for ticker in tickers:
         try:
@@ -157,7 +157,7 @@ def get_last_timestamp(conn: sqlite3.Connection, ticker: str, interval: str) -> 
     return row[0] if row and row[0] else None
 
 
-def _get_access_token() -> str:
+def get_access_token() -> str:
     """
     캐시된 토큰이 있고 아직 유효하면 재사용, 없거나 만료됐으면 재발급.
     """
