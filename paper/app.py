@@ -226,11 +226,24 @@ async def expire_at_close() -> None:
     가드 없이는 예외가 이 무한루프를 뚫고 나가 태스크가 조용히 죽는다 — 참조를
     안 잡고 있었으면 "Task exception was never retrieved"만 로그에 남고,
     그 뒤로 이 프로세스가 떠 있는 동안 미체결 주문이 다시는 만료되지 않는다.
+
+    current_session()은 asyncio.to_thread로 부른다. 이 태스크는 이벤트 루프
+    위에서 60초마다 깨는데, 실패해서 session_cache가 갱신 안 된 채로 있으면
+    (토스가 안 뻗어 있는 동안) 매번 toss.get_session()의 requests.get(timeout=10)을
+    루프 위에서 그대로 타게 되어 웹소켓 수신·핑·모든 요청이 최대 10초씩
+    멎는다 — tz_now()에서 걷어낸 것과 같은 결함이라 여기서도 걷어낸다.
+
+    실패해도 on_status는 부르지 않는다. feed_status는 실시간 웹소켓 피드의
+    상태를 뜻하고("피드가 끊겨 있어 지정가 체결 판정이 멈췄다"), 이 루프가
+    실패하는 건 그와 무관한 별개의 REST 호출(하루 한 번 장 구간 재조회)이다.
+    여기서 feed_status를 error로 덮으면 피드는 멀쩡한데 화면은 끊긴 것처럼
+    보이고, 진짜 feed 전환이 올 때까지 그 거짓 상태가 남는다 — api_candles와
+    같은 이유로 콘솔에만 남긴다.
     """
     while True:
         await asyncio.sleep(60)
         try:
-            session = current_session()
+            session = await asyncio.to_thread(current_session)
             if session is None:
                 continue
             now = tz_now()
@@ -241,7 +254,7 @@ async def expire_at_close() -> None:
                     broadcast({"type": "expired", "order_ids": expired})
                     broadcast(portfolio_payload())
         except Exception as exc:
-            on_status("error", f"주문 만료 확인 실패: {exc}")
+            print(f"[expire_at_close] 주문 만료 확인 실패: {exc}")
             continue
 
 
