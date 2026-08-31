@@ -208,12 +208,17 @@ class Broker:
     # ------------------------------------------------------ 묶인 자금·수량
 
     def reserved(self) -> int:
-        """미체결 매수 지정가가 묶어 둔 금액. 없으면 같은 돈으로 여러 번 주문된다."""
-        row = self.conn.execute(
-            "SELECT COALESCE(SUM(limit_price * (qty - filled_qty)), 0) FROM orders "
+        """
+        미체결 매수 지정가가 묶어 둔 금액. 없으면 같은 돈으로 여러 번 주문된다.
+
+        수수료까지 묶어야 한다. 대금만 묶으면 잔고를 정확히 소진하는 주문이
+        검증을 통과한 뒤 체결 시점에 수수료만큼 마이너스로 떨어진다.
+        """
+        rows = self.conn.execute(
+            "SELECT limit_price * (qty - filled_qty) AS gross FROM orders "
             "WHERE status = 'pending' AND side = 'buy' AND limit_price IS NOT NULL"
-        ).fetchone()
-        return int(row[0])
+        ).fetchall()
+        return sum(int(r["gross"]) + round(int(r["gross"]) * FEE_RATE) for r in rows)
 
     def available_cash(self) -> int:
         return self.cash() - self.reserved()
@@ -334,9 +339,13 @@ class Broker:
                     f"{limit_price:,}원은 호가단위에 맞지 않습니다.")
 
         if side == "buy":
+            # 어느 쪽이든 수수료를 포함해야 체결 뒤 잔고가 음수로 떨어지지 않는다.
             # 시장가는 지정가가 없으므로 호가를 훑어 실제로 들 돈을 계산한다.
-            need = (limit_price * qty if type == "limit"
-                    else self._sweep_cost(book, qty))
+            if type == "limit":
+                gross = limit_price * qty
+                need = gross + round(gross * FEE_RATE)
+            else:
+                need = self._sweep_cost(book, qty)
             if need > self.available_cash():
                 raise OrderRejected(
                     f"주문가능현금이 부족합니다. "
@@ -348,15 +357,22 @@ class Broker:
                     f"주문 {qty}주 / 가능 {self.available_qty(symbol)}주")
 
     def _sweep_cost(self, book: Book, qty: int) -> int:
-        """시장가 매수가 호가를 훑을 때 실제로 나갈 금액(수수료 포함)."""
+        """
+        시장가 매수가 호가를 훑을 때 실제로 나갈 금액(수수료 포함).
+
+        수수료를 호가 단마다 반올림한다. `_record_fill`이 체결 건마다 따로
+        반올림하므로, 여기서 총액에 한 번만 걸면 '반올림들의 합'과 '합의
+        반올림'이 달라져 검증이 통과시킨 주문이 잔고를 1원씩 넘어선다.
+        """
         remaining, cost = qty, 0
         for level in book.asks:
             if remaining <= 0:
                 break
             take = min(remaining, level.volume)
-            cost += take * level.price
+            gross = take * level.price
+            cost += gross + round(gross * FEE_RATE)
             remaining -= take
-        return cost + round(cost * FEE_RATE)
+        return cost
 
     # ------------------------------------------------------ 취소·만료·리셋
 

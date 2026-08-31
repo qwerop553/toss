@@ -203,9 +203,9 @@ def test_현금이_모자라면_거부된다():
 def test_미체결_매수의_예약금액이_두번째_주문을_막는다():
     b = new_broker(cash=3_000_000)
     b.place("005930", "buy", "limit", 10, 250_000,
-            book=book(), session=SESSION, now=DAY)   # 250만원 예약
-    assert b.reserved() == 2_500_000
-    assert b.available_cash() == 500_000
+            book=book(), session=SESSION, now=DAY)   # 250만원 + 수수료 375
+    assert b.reserved() == 2_500_375
+    assert b.available_cash() == 499_625
     msg = 거부되는가(lambda: b.place("005930", "buy", "limit", 10, 250_000,
                                    book=book(), session=SESSION, now=DAY))
     assert "현금" in msg
@@ -277,6 +277,48 @@ def test_리셋이_주문과_체결을_모두_지운다():
     assert b.cash() == 10_000_000
     assert b.positions() == {}
     assert b.orders() == []
+
+
+def test_지정가_예약금액이_수수료까지_묶는다():
+    # 대금만 묶으면 잔고를 정확히 소진하는 주문이 검증을 통과한 뒤 체결에서
+    # 수수료만큼 마이너스로 떨어진다. 예약이 수수료를 포함해야 한다.
+    b = new_broker(cash=2_500_000)
+    거부되는가(lambda: b.place("005930", "buy", "limit", 10, 250_000,
+                             book=book(), session=SESSION, now=DAY))
+
+    b2 = new_broker(cash=2_500_375)          # 대금 2,500,000 + 수수료 375
+    b2.place("005930", "buy", "limit", 10, 250_000,
+             book=book(), session=SESSION, now=DAY)
+    assert b2.reserved() == 2_500_375
+    assert b2.available_cash() == 0
+    b2.on_trade("005930", price=250_000, volume=10, now=DAY)
+    assert b2.cash() == 0                    # 음수로 떨어지지 않는다
+
+
+def test_시장가_검증금액이_실제_체결금액과_일치한다():
+    # _sweep_cost가 총액에 한 번만 반올림하면 호가 단마다 반올림하는 실제
+    # 체결과 어긋난다. 3,400 + 3,401을 사면 실제로는 6,803원이 나간다.
+    쪼갠호가 = book(asks=((3_400, 1), (3_401, 1)), bids=((3_300, 10),))
+
+    b = new_broker(cash=6_803)
+    oid = b.place("005930", "buy", "market", 2,
+                  book=쪼갠호가, session=SESSION, now=DAY)
+    assert b.order(oid)["status"] == "filled"
+    assert b.cash() == 0                     # 정확히 소진, 음수 아님
+
+    b2 = new_broker(cash=6_802)              # 1원 모자라면 거부돼야 한다
+    거부되는가(lambda: b2.place("005930", "buy", "market", 2,
+                             book=쪼갠호가, session=SESSION, now=DAY))
+
+
+def test_리셋은_관심종목을_남긴다():
+    # reset의 docstring이 약속하는 내용인데 테스트가 없으면 나중에 DELETE 한
+    # 줄이 늘어도 아무도 모른다.
+    b = new_broker()
+    b.conn.execute("INSERT INTO watchlist (symbol, added_at) VALUES ('005930', 't')")
+    b.conn.commit()
+    b.reset()
+    assert b.conn.execute("SELECT COUNT(*) FROM watchlist").fetchone()[0] == 1
 
 
 if __name__ == "__main__":
