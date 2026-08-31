@@ -81,12 +81,48 @@ def update_candles(ticker: str, interval: str = "1m",
 
 def update_multiple(tickers: list[str], interval: str = "1m",
                      adjusted: bool = True, db_path: str = DEFAULT_DB_PATH) -> dict:
+    """
+    여러 종목을 순서대로 수집한다. 반환값은 {종목코드: 추가된 봉 수}이고,
+    실패한 종목은 봉 수 대신 예외 메시지가 들어간다.
+
+    한 종목이 죽어도 멈추지 않는 이유: 50종목 수집은 한 시간이 넘는 작업이라,
+    38번째에서 상장폐지 종목 하나 때문에 전체가 날아가면 앞의 37종목까지
+    다시 받아야 한다 (DB는 INSERT OR IGNORE 증분이라 재실행 자체는 안전하지만
+    시간이 아깝다).
+    """
     results = {}
-    for ticker in tickers:
-        added = update_candles(ticker, interval, adjusted, db_path)
-        results[ticker] = added
-        print(f"  {ticker} ({interval}): {added}개 추가")
+    total = len(tickers)
+    for i, ticker in enumerate(tickers, 1):
+        try:
+            added = update_candles(ticker, interval, adjusted, db_path)
+            results[ticker] = added
+            print(f"  [{i}/{total}] {ticker} ({interval}): {added}개 추가", flush=True)
+        except Exception as exc:
+            results[ticker] = f"{type(exc).__name__}: {exc}"
+            print(f"  [{i}/{total}] {ticker} 실패 — {results[ticker]}", flush=True)
     return results
+
+
+def check_tickers(tickers: list[str], interval: str = "1m") -> list[str]:
+    """
+    종목코드가 실제로 데이터를 주는지 1페이지만 받아서 확인한다.
+    전체 수집은 종목당 1분 반이 걸리므로, 오타난 코드는 여기서 먼저 걸러야 한다.
+    반환값은 '데이터가 없는 코드' 목록이다.
+    """
+    token = _get_access_token()
+    bad = []
+    for ticker in tickers:
+        try:
+            candles, _ = _fetch_page(ticker, interval, token, count=1)
+        except Exception as exc:
+            candles = []
+            print(f"  {ticker}: 호출 실패 — {type(exc).__name__}: {exc}")
+        if not candles:
+            bad.append(ticker)
+        else:
+            c = candles[0]
+            print(f"  {ticker}: OK  최근봉 {c['timestamp']} 종가 {c['closePrice']}")
+    return bad
 
 def load_candles(ticker: str, interval: str = "1m", db_path: str = DEFAULT_DB_PATH,
                   start: Optional[str] = None, end: Optional[str] = None) -> pd.DataFrame:
@@ -212,7 +248,11 @@ def _main():
     import argparse
 
     parser = argparse.ArgumentParser(description="토스 API로 캔들 데이터 업데이트")
-    parser.add_argument("tickers", nargs="+", help="종목 코드 (여러 개 가능, 공백으로 구분)")
+    parser.add_argument("tickers", nargs="*", help="종목 코드 (여러 개 가능, 공백으로 구분)")
+    parser.add_argument("--kospi50", action="store_true",
+                        help="tickers.py의 코스피 대형주 50종목을 대상으로 한다")
+    parser.add_argument("--check", action="store_true",
+                        help="수집하지 않고 종목코드가 유효한지만 1페이지씩 확인한다")
     parser.add_argument("--interval", default="1m", help="봉 주기 (기본: 1m)")
     parser.add_argument("--db-path", default=DEFAULT_DB_PATH, help="DB 파일 경로")
     parser.add_argument("--no-adjust", action="store_true", help="수정주가 미적용")
@@ -220,6 +260,21 @@ def _main():
 
     adjusted = not args.no_adjust
 
+    tickers = list(args.tickers)
+    if args.kospi50:
+        from tickers import KOSPI50
+        # 인자로 준 종목과 합치되 순서를 유지하고 중복은 제거한다
+        tickers = list(dict.fromkeys(tickers + list(KOSPI50)))
+    if not tickers:
+        parser.error("종목 코드를 주거나 --kospi50을 쓰세요.")
+
+    if args.check:
+        bad = check_tickers(tickers, interval=args.interval)
+        print(f"\n{len(tickers)}종목 중 {len(bad)}개 무응답"
+              + (f": {', '.join(bad)}" if bad else ""))
+        return
+
+    args.tickers = tickers
     if len(args.tickers) == 1:
         added = update_candles(args.tickers[0], interval=args.interval,
                                 adjusted=adjusted, db_path=args.db_path)
