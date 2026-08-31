@@ -84,16 +84,24 @@
 // 시장가 주문의 limit_price, 시세를 아직 못 받은 보유 종목의 price/pnl).
 // 대시로 표시해 숫자 0과 구분한다.
 const won = n => n == null ? "—" : n.toLocaleString("ko-KR");
+// 서버에서 온 문자열(종목코드·종목명)을 innerHTML/속성값에 꽂기 전에 이스케이프한다.
+// symbol은 관심종목 추가창의 자유 입력이라 서버 쪽 검증이 없다 — 어포스트로피
+// 하나로 onclick="select('${...}')" 속성이 깨지면 화면이 설명 없이 이상해진다.
+const esc = s => String(s ?? "").replace(/[&<>"']/g,
+  c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 let symbol = null, series = null;
 
-// ---- 연결 상태 배너. 끊긴 동안 지정가 체결 판정이 멈추므로 반드시 보인다.
+// ---- 연결 상태 배너. connected가 아닌 모든 상태에서 "지정가 체결이
+// 멈췄다"는 결론을 먼저 말해야 한다 — error 상태(구독 선언 실패 등)도
+// reconnecting과 똑같이 체결 판정이 멈추는 상황이라 예외로 두면 안 된다.
 function banner(status, message) {
   const el = document.getElementById("banner");
   if (status === "connected") { el.className = ""; return; }
   el.className = "on";
-  el.textContent = status === "reconnecting"
-    ? "실시간 연결 끊김 — 지정가 체결이 중단됩니다. 재접속 중… " + (message || "")
-    : "연결 오류: " + (message || status);
+  const why = status === "reconnecting" ? "실시간 연결 끊김 — 재접속 중"
+            : status === "error"        ? "실시간 연결 오류"
+            : "실시간 연결 준비 중";
+  el.textContent = `${why} — 지정가 체결이 중단됩니다.` + (message ? ` (${message})` : "");
 }
 
 // ---- 잠깐 떴다 사라지는 안내(장 마감 만료 등). 배너와 달리 상태가 아니라
@@ -137,9 +145,9 @@ async function api(path, opts) {
 async function loadWatch() {
   const rows = await api("/api/watchlist");
   document.getElementById("watch").innerHTML = rows.map(r => `
-    <tr class="${r.symbol === symbol ? "sel" : ""}" onclick="select('${r.symbol}')">
-      <td>${r.name}</td><td>${won(r.price)}</td>
-      <td><button onclick="event.stopPropagation();remove('${r.symbol}')">×</button></td>
+    <tr class="${r.symbol === symbol ? "sel" : ""}" onclick="select('${esc(r.symbol)}')">
+      <td>${esc(r.name)}</td><td>${won(r.price)}</td>
+      <td><button onclick="event.stopPropagation();remove('${esc(r.symbol)}')">×</button></td>
     </tr>`).join("");
 }
 
@@ -189,7 +197,7 @@ async function order(side) {
 async function loadOpen() {
   const rows = await api("/api/orders?status=pending");
   document.getElementById("open").innerHTML = rows.map(o => `
-    <tr><td>${o.symbol}</td>
+    <tr><td>${esc(o.symbol)}</td>
         <td class="${o.side === "buy" ? "pos" : "neg"}">${o.side === "buy" ? "매수" : "매도"}</td>
         <td>${won(o.limit_price)}</td>
         <td>${o.filled_qty}/${o.qty}</td>
@@ -197,16 +205,22 @@ async function loadOpen() {
 }
 
 async function cancel(id) {
-  await api("/api/orders/" + id, { method: "DELETE" });
-  await loadOpen();
+  // DELETE는 이미 종료된 주문 등을 400 + detail로 거절할 수 있다. 잡지
+  // 않으면 클릭이 아무 설명 없이 그냥 씹힌다 — order()와 같은 패턴으로 처리.
+  try {
+    await api("/api/orders/" + id, { method: "DELETE" });
+    await loadOpen();
+  } catch (e) { document.getElementById("err").textContent = e.message; }
 }
 
 async function remove(s) {
-  await api("/api/watchlist", { method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ symbol: s, action: "remove" }) });
-  if (symbol === s) symbol = null;
-  await loadWatch();
+  try {
+    await api("/api/watchlist", { method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ symbol: s, action: "remove" }) });
+    if (symbol === s) symbol = null;
+    await loadWatch();
+  } catch (e) { document.getElementById("err").textContent = e.message; }
 }
 
 document.getElementById("add").addEventListener("keydown", async e => {
@@ -229,7 +243,7 @@ function drawPortfolio(p) {
     // 보여주고 빨강/파랑 색도 칠하지 않는다.
     const cls = x.pnl == null ? "" : (x.pnl >= 0 ? "pos" : "neg");
     const pnl = x.pnl == null ? "—" : `${won(x.pnl)} (${x.pnl_pct}%)`;
-    return `<tr><td>${x.symbol}</td><td>${x.qty}</td><td>${won(x.avg_cost)}</td>
+    return `<tr><td>${esc(x.symbol)}</td><td>${x.qty}</td><td>${won(x.avg_cost)}</td>
         <td class="${cls}">${pnl}</td></tr>`;
   }).join("");
   document.getElementById("cash").innerHTML =
