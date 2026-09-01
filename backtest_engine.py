@@ -30,9 +30,20 @@ class BacktestResult:
 
 def run_backtest(df: pd.DataFrame, signal: pd.Series,
                   buy_slippage: float = 0.00015,
-                  sell_slippage: float = 0.00215) -> BacktestResult:
+                  sell_slippage: float = 0.00215,
+                  holdings0: int = 0) -> BacktestResult:
+    """
+    holdings0: 시작 시점에 이미 들고 있는 수량. 기본 0이라 평소 동작은 그대로다.
 
-    holdings = 0
+    왜 필요한가:
+      이 루프는 순수한 순차 시뮬레이션이고, 한 봉에서 다음 봉으로 넘어가는 상태가
+      holdings 하나뿐이다. 그래서 중간부터 이어서 돌릴 수 있다 — results.py의
+      일 단위 증분 캐시가 이 인자로 마지막 저장 지점의 보유량을 되돌려 넣는다.
+      누적 실현현금은 여기서 다루지 않는다(항상 0에서 시작한다). 호출자가
+      직접 더해야 한다. 그 편이 엔진이 몰라도 되는 상태를 안 들고 있어 낫다.
+    """
+
+    holdings = holdings0
     holdings_series, cash_flow, cost_series, trades = [], [], [], []
 
     for i in range(len(df)):

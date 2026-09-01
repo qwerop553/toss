@@ -1,16 +1,26 @@
 import numpy as np
 import pandas as pd 
 
+# 표본이 0~1개면 pandas의 std(ddof=1)가 nan을 낸다. `== 0` 비교로는 nan이 안
+# 걸러져서 지표가 통째로 nan이 되고, 순위표 정렬과 그리드서치 최고점 비교가
+# 조용히 망가진다. `not (std > 0)`은 nan과 0을 한 번에 막는다.
+def _usable(std) -> bool:
+    return bool(std > 0)
+
 def sharpe_ratio(returns: pd.Series, periods_per_year: int = 252) -> float:
-    if returns.std() == 0:
+    std = returns.std()
+    if not _usable(std):
         return 0.0
-    return (returns.mean() / returns.std()) * np.sqrt(periods_per_year)
+    return (returns.mean() / std) * np.sqrt(periods_per_year)
 
 def sortino_ratio(returns: pd.Series, periods_per_year: int = 252) -> float:
+    # 하락일이 하나도 없거나 딱 하나면 하방편차를 잴 수 없다. 그런 구간은
+    # '위험이 0이라 소르티노가 무한'이 아니라 '표본이 모자라 못 잰다'가 맞다.
     downside = returns[returns < 0]
-    if downside.std() == 0:
+    std = downside.std()
+    if not _usable(std):
         return 0.0
-    return (returns.mean() / downside.std()) * np.sqrt(periods_per_year)
+    return (returns.mean() / std) * np.sqrt(periods_per_year)
 
 def max_drawdown(equity_curve: pd.Series, capital: float) -> float:
     """
