@@ -25,7 +25,8 @@ from validation import walk_forward_split
 GRAPH_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "graph")
 
 
-def run_one(name: str, ticker: str, interval: str, optimize: bool, metric: str):
+def run_one(name: str, ticker: str, interval: str, optimize: bool, metric: str,
+            full: bool = False):
     """
     전략 하나를 종목 하나에 돌린다.
 
@@ -33,7 +34,11 @@ def run_one(name: str, ticker: str, interval: str, optimize: bool, metric: str):
     그 파라미터를 test 구간(out-of-sample)에 그대로 적용한다. 이렇게 해야
     '파라미터를 맞춰 놓고 같은 데이터로 자랑하는' 자기기만을 피할 수 있다.
 
-    반환: (test 구간 df, BacktestResult, 사용한 파라미터 dict, 그리드서치 순위표 or None)
+    full=True면 walk-forward 분할을 건너뛰고 train/test 모두 전체 구간으로 둔다.
+    --optimize와 같이 쓰면 최적화와 평가를 같은 데이터로 하는 셈이라 in-sample
+    결과다 (성과가 부풀려진다). 전략 자체의 전 구간 거동을 볼 때만 써라.
+
+    반환: (평가 구간 df, BacktestResult, 사용한 파라미터 dict, 그리드서치 순위표 or None)
     """
     strategy_cls = strategies.REGISTRY[name]
 
@@ -44,7 +49,7 @@ def run_one(name: str, ticker: str, interval: str, optimize: bool, metric: str):
             f"먼저 `python scrap.py {ticker} --interval {interval}`를 실행하세요."
         )
     df = df.reset_index(drop=True)
-    train, test = walk_forward_split(df)
+    train, test = (df, df) if full else walk_forward_split(df)
 
     params: dict = {}
     leaderboard = None
@@ -75,15 +80,18 @@ def cmd_single(args):
     ticker = args.ticker[0]
 
     test, result, params, leaderboard = run_one(
-        name, ticker, args.interval, args.optimize, args.metric
+        name, ticker, args.interval, args.optimize, args.metric, args.full
     )
 
-    print(f"\n{name} / {ticker} / {args.interval}")
+    print(f"\n{name} / {ticker} / {args.interval}"
+          + (" [전체 구간 / in-sample]" if args.full else ""))
     if leaderboard is not None:
         print(f"\n[ train 그리드서치 상위 10개 — 기준: {args.metric} ]")
         print(leaderboard.head(10).to_string(index=False))
         print(f"\n최적 파라미터: {params}")
-        print("\n아래는 이 파라미터를 test 구간(out-of-sample)에 적용한 결과입니다.")
+        print("\n아래는 이 파라미터를 "
+              + ("전체 구간(in-sample)" if args.full else "test 구간(out-of-sample)")
+              + "에 적용한 결과입니다.")
     elif args.optimize:
         print(f"(grids.py에 {name}의 탐색 범위가 없어 기본 파라미터로 실행합니다)")
 
@@ -110,7 +118,8 @@ def cmd_compare(args):
         for ticker in args.ticker:
             try:
                 _, result, params, _ = run_one(
-                    name, ticker, args.interval, args.optimize, args.metric
+                    name, ticker, args.interval, args.optimize, args.metric,
+                    args.full,
                 )
             except Exception as exc:
                 # 한 전략이 죽어도 나머지 비교는 계속되어야 한다.
@@ -135,7 +144,8 @@ def cmd_compare(args):
         raise SystemExit("실행된 조합이 없습니다.")
 
     table = pd.DataFrame(rows).sort_values("샤프", ascending=False).reset_index(drop=True)
-    print("\n[ 비교 결과 — test 구간(out-of-sample) 기준, 샤프 내림차순 ]")
+    span = "전체 구간(in-sample)" if args.full else "test 구간(out-of-sample)"
+    print(f"\n[ 비교 결과 — {span} 기준, 샤프 내림차순 ]")
     print(table.to_string(index=False))
 
 
@@ -158,6 +168,8 @@ def main():
     parser.add_argument("--metric", default="sharpe",
                         choices=["sharpe", "sortino", "calmar", "mdd"],
                         help="최적화 기준 (기본: sharpe)")
+    parser.add_argument("--full", action="store_true",
+                        help="walk-forward 분할 없이 전체 구간으로 백테스트 (in-sample)")
     parser.add_argument("--plot", action="store_true", help="graph/에 그래프 저장")
     parser.add_argument("--daily", action="store_true", help="일별 요약표 출력")
     args = parser.parse_args()

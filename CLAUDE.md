@@ -14,8 +14,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ```bash
 python scrap.py 005930 000660 --interval 1m        # 캔들 수집 → market_data.db (증분)
+python scrap.py --kospi50 --check                   # tickers.KOSPI50 종목코드 유효성만 확인
+python scrap.py --kospi50 --interval 1m             # 50종목 전량 수집 (1시간 이상)
 python run.py EmaCrossStrategy --ticker 005930      # 단일 백테스트
 python run.py EmaCrossStrategy --ticker 005930 --optimize --plot --daily
+python run.py EmaCrossStrategy --ticker 005930 --full   # walk-forward 없이 전 구간 (in-sample)
 python run.py --all --ticker 005930 000660          # 전략 × 종목 순위표
 
 python results.py                                   # 전 전략 × KOSPI50 증분 평가 + 리포트
