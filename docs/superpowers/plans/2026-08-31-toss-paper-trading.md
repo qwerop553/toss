@@ -66,34 +66,45 @@ from paper.ticks import is_valid_price, tick_size
 
 def test_구간별_호가단위():
     # KRX 국내주식 호가단위 (2023-01-25 개정 기준)
-    assert tick_size(1_500) == 1
-    assert tick_size(4_999) == 1
-    assert tick_size(5_000) == 5
-    assert tick_size(19_999) == 5
-    assert tick_size(20_000) == 10
-    assert tick_size(49_999) == 10
-    assert tick_size(50_000) == 50
-    assert tick_size(199_999) == 50
-    assert tick_size(200_000) == 100
-    assert tick_size(499_999) == 100
-    assert tick_size(500_000) == 500
-    assert tick_size(1_000_000) == 500
+    assert tick_size(1_999) == 1
+    assert tick_size(2_000) == 5
+    assert tick_size(4_999) == 5
+    assert tick_size(5_000) == 10
+    assert tick_size(19_999) == 10
+    assert tick_size(20_000) == 50
+    assert tick_size(49_999) == 50
+    assert tick_size(50_000) == 100
+    assert tick_size(199_999) == 100
+    assert tick_size(200_000) == 500
+    assert tick_size(499_999) == 500
+    assert tick_size(500_000) == 1_000
+    assert tick_size(1_000_000) == 1_000
 
 
 def test_경계값이_아래_구간이_아니라_위_구간에_속한다():
-    # 5,000원 정확히는 1원 단위가 아니라 5원 단위다. 경계를 반대로 잡으면
-    # 4,999원짜리 주문이 통과하고 5,000원짜리가 막히는 식으로 뒤집힌다.
-    assert tick_size(4_999) == 1
-    assert tick_size(5_000) == 5
+    # 2,000원 정확히는 1원 단위가 아니라 5원 단위다. 경계를 반대로 잡으면
+    # 1,999원짜리 주문이 막히고 2,000원짜리가 통과하는 식으로 뒤집힌다.
+    assert tick_size(1_999) == 1
+    assert tick_size(2_000) == 5
 
 
 def test_유효_지정가_판정():
-    assert is_valid_price(258_500)        # 20만원대 -> 100원 단위
+    assert is_valid_price(258_500)        # 20만~50만 -> 500원 단위
     assert not is_valid_price(258_550)
-    assert not is_valid_price(258_501)
-    assert is_valid_price(4_999)          # 5천원 미만 -> 1원 단위
-    assert is_valid_price(7_005)          # 5천~2만 -> 5원 단위
-    assert not is_valid_price(7_003)
+    assert not is_valid_price(258_100)
+    assert is_valid_price(1_999)          # 2천원 미만 -> 1원 단위
+    assert is_valid_price(7_010)          # 5천~2만 -> 10원 단위
+    assert not is_valid_price(7_005)
+
+
+def test_실제_호가와_일치한다():
+    # 2026-08-31에 토스 API로 실제로 받은 삼성전자 호가다:
+    # 258,000 / 258,500 / 259,000 / 259,500 / 260,000 — 간격이 500원이다.
+    # 표가 한 칸이라도 밀리면 이 assert가 깨진다. 이 파일의 유일한 실측 근거라
+    # 지우지 마라.
+    assert tick_size(258_500) == 500
+    for price in (258_000, 258_500, 259_000, 259_500, 260_000):
+        assert is_valid_price(price)
 
 
 def test_0원_이하는_유효하지_않다():
@@ -125,7 +136,7 @@ Expected: FAIL — `ModuleNotFoundError: No module named 'paper.ticks'`
 KRX 국내주식 호가단위.
 
 왜 필요한가:
-  258,500원짜리 종목의 호가단위는 100원이라 258,550원 같은 지정가는 실제로
+  258,500원짜리 종목의 호가단위는 500원이라 258,550원 같은 지정가는 실제로
   낼 수 없다. 막지 않으면 현실에 존재하지 않는 주문이 주문장에 들어가고,
   그 주문이 체결되는 순간 모의투자 전체가 거짓말이 된다.
 
@@ -134,11 +145,12 @@ KRX 국내주식 호가단위.
 
 # (하한가, 호가단위). 가격이 하한가 '이상'이면 그 구간이다. 큰 값부터 훑는다.
 _TIERS = [
-    (500_000, 500),
-    (200_000, 100),
-    (50_000, 50),
-    (20_000, 10),
-    (5_000, 5),
+    (500_000, 1_000),
+    (200_000, 500),
+    (50_000, 100),
+    (20_000, 50),
+    (5_000, 10),
+    (2_000, 5),
     (0, 1),
 ]
 
@@ -148,7 +160,9 @@ def tick_size(price: int) -> int:
     for floor, tick in _TIERS:
         if price >= floor:
             return tick
-    return 1  # 도달하지 않는다. _TIERS의 마지막이 0이라서.
+    # price가 음수면 어떤 구간에도 안 걸려 여기 온다. is_valid_price가 먼저
+    # 걸러 주므로 실사용에서는 오지 않지만, 도달 불가라고 적으면 거짓말이다.
+    return 1
 
 
 def is_valid_price(price: int) -> bool:
@@ -462,7 +476,7 @@ class Broker:
         gross = qty * price
         fee = round(gross * FEE_RATE)
         tax = round(gross * TAX_RATE) if side == "sell" else 0
-        cur = self.conn.execute(
+        self.conn.execute(
             "INSERT INTO fills (order_id, symbol, side, qty, price, fee, tax, at) "
             "VALUES (?,?,?,?,?,?,?,?)",
             (order_id, symbol, side, qty, price, fee, tax, at))
@@ -954,6 +968,48 @@ def test_만료가_미체결을_전부_정리한다():
     assert b.reserved() == 0
 
 
+def test_지정가_예약금액이_수수료까지_묶는다():
+    # 대금만 묶으면 잔고를 정확히 소진하는 주문이 검증을 통과한 뒤 체결에서
+    # 수수료만큼 마이너스로 떨어진다. 예약이 수수료를 포함해야 한다.
+    b = new_broker(cash=2_500_000)
+    거부되는가(lambda: b.place("005930", "buy", "limit", 10, 250_000,
+                             book=book(), session=SESSION, now=DAY))
+
+    b2 = new_broker(cash=2_500_375)          # 대금 2,500,000 + 수수료 375
+    b2.place("005930", "buy", "limit", 10, 250_000,
+             book=book(), session=SESSION, now=DAY)
+    assert b2.reserved() == 2_500_375
+    assert b2.available_cash() == 0
+    b2.on_trade("005930", price=250_000, volume=10, now=DAY)
+    assert b2.cash() == 0                    # 음수로 떨어지지 않는다
+
+
+def test_시장가_검증금액이_실제_체결금액과_일치한다():
+    # _sweep_cost가 총액에 한 번만 반올림하면 호가 단마다 반올림하는 실제
+    # 체결과 어긋난다. 3,400 + 3,401을 사면 실제로는 6,803원이 나간다.
+    쪼갠호가 = book(asks=((3_400, 1), (3_401, 1)), bids=((3_300, 10),))
+
+    b = new_broker(cash=6_803)
+    oid = b.place("005930", "buy", "market", 2,
+                  book=쪼갠호가, session=SESSION, now=DAY)
+    assert b.order(oid)["status"] == "filled"
+    assert b.cash() == 0                     # 정확히 소진, 음수 아님
+
+    b2 = new_broker(cash=6_802)              # 1원 모자라면 거부돼야 한다
+    거부되는가(lambda: b2.place("005930", "buy", "market", 2,
+                             book=쪼갠호가, session=SESSION, now=DAY))
+
+
+def test_리셋은_관심종목을_남긴다():
+    # reset의 docstring이 약속하는 내용인데 테스트가 없으면 나중에 DELETE 한
+    # 줄이 늘어도 아무도 모른다.
+    b = new_broker()
+    b.conn.execute("INSERT INTO watchlist (symbol, added_at) VALUES ('005930', 't')")
+    b.conn.commit()
+    b.reset()
+    assert b.conn.execute("SELECT COUNT(*) FROM watchlist").fetchone()[0] == 1
+
+
 def test_리셋이_주문과_체결을_모두_지운다():
     b = new_broker()
     b.place("005930", "buy", "market", 10, book=book(), session=SESSION, now=DAY)
@@ -982,12 +1038,17 @@ from paper.ticks import is_valid_price
     # ------------------------------------------------------ 묶인 자금·수량
 
     def reserved(self) -> int:
-        """미체결 매수 지정가가 묶어 둔 금액. 없으면 같은 돈으로 여러 번 주문된다."""
-        row = self.conn.execute(
-            "SELECT COALESCE(SUM(limit_price * (qty - filled_qty)), 0) FROM orders "
+        """
+        미체결 매수 지정가가 묶어 둔 금액. 없으면 같은 돈으로 여러 번 주문된다.
+
+        수수료까지 묶어야 한다. 대금만 묶으면 잔고를 정확히 소진하는 주문이
+        검증을 통과한 뒤 체결 시점에 수수료만큼 마이너스로 떨어진다.
+        """
+        rows = self.conn.execute(
+            "SELECT limit_price * (qty - filled_qty) AS gross FROM orders "
             "WHERE status = 'pending' AND side = 'buy' AND limit_price IS NOT NULL"
-        ).fetchone()
-        return int(row[0])
+        ).fetchall()
+        return sum(int(r["gross"]) + round(int(r["gross"]) * FEE_RATE) for r in rows)
 
     def available_cash(self) -> int:
         return self.cash() - self.reserved()
@@ -1043,9 +1104,13 @@ from paper.ticks import is_valid_price
                     f"{limit_price:,}원은 호가단위에 맞지 않습니다.")
 
         if side == "buy":
+            # 어느 쪽이든 수수료를 포함해야 체결 뒤 잔고가 음수로 떨어지지 않는다.
             # 시장가는 지정가가 없으므로 호가를 훑어 실제로 들 돈을 계산한다.
-            need = (limit_price * qty if type == "limit"
-                    else self._sweep_cost(book, qty))
+            if type == "limit":
+                gross = limit_price * qty
+                need = gross + round(gross * FEE_RATE)
+            else:
+                need = self._sweep_cost(book, qty)
             if need > self.available_cash():
                 raise OrderRejected(
                     f"주문가능현금이 부족합니다. "
@@ -1057,15 +1122,22 @@ from paper.ticks import is_valid_price
                     f"주문 {qty}주 / 가능 {self.available_qty(symbol)}주")
 
     def _sweep_cost(self, book: Book, qty: int) -> int:
-        """시장가 매수가 호가를 훑을 때 실제로 나갈 금액(수수료 포함)."""
+        """
+        시장가 매수가 호가를 훑을 때 실제로 나갈 금액(수수료 포함).
+
+        수수료를 호가 단마다 반올림한다. `_record_fill`이 체결 건마다 따로
+        반올림하므로, 여기서 총액에 한 번만 걸면 '반올림들의 합'과 '합의
+        반올림'이 달라져 검증이 통과시킨 주문이 잔고를 1원씩 넘어선다.
+        """
         remaining, cost = qty, 0
         for level in book.asks:
             if remaining <= 0:
                 break
             take = min(remaining, level.volume)
-            cost += take * level.price
+            gross = take * level.price
+            cost += gross + round(gross * FEE_RATE)
             remaining -= take
-        return cost + round(cost * FEE_RATE)
+        return cost
 
     # ------------------------------------------------------ 취소·만료·리셋
 
@@ -1403,6 +1475,19 @@ def test_호가_이벤트_파싱():
     assert data["bids"][0].volume == 80
 
 
+def test_필드가_빠지거나_숫자가_아닌_프레임에도_터지지_않는다():
+    # parse_event가 예외를 던지면 run()의 `async for`를 뚫고 나가 연결이
+    # 통째로 끊기고, 끊긴 동안 지정가 체결 판정이 멈춘다. 프레임 하나는 버리고
+    # 연결은 지켜야 한다.
+    assert parse_event('{"type":"message","topic":"trade:kr:005930",'
+                       '"data":{"volume":"12"}}') is None            # price 없음
+    assert parse_event('{"type":"message","topic":"trade:kr:005930",'
+                       '"data":{"price":"abc","volume":"1"}}') is None  # 숫자 아님
+    assert parse_event('{"type":"message","topic":"orderbook:kr:005930",'
+                       '"data":{"asks":[{"price":"100"}],"bids":[]}}') is None
+    assert parse_event('{"type":"message","topic":"trade:kr:005930"}') is None
+
+
 def test_pong과_알수없는_메시지는_None():
     assert parse_event('{"type":"pong"}') is None
     assert parse_event('{"type":"message","topic":"trade:us:AAPL","data":{}}') is None
@@ -1489,14 +1574,21 @@ def parse_event(raw: str):
     channel, _, symbol = parts
     data = msg.get("data") or {}
 
-    if channel == "trade":
-        return "trade", symbol, {"price": int(data["price"]),
-                                 "volume": int(data["volume"]),
-                                 "timestamp": data.get("timestamp")}
-    if channel == "orderbook":
-        lv = lambda side: [Level(int(x["price"]), int(x["volume"]))
-                           for x in data.get(side, [])]
-        return "orderbook", symbol, {"asks": lv("asks"), "bids": lv("bids")}
+    # 필드가 빠졌거나 숫자가 아닌 프레임이 와도 절대 예외를 내보내지 않는다.
+    # 여기서 던지면 그 예외가 run()의 `async for`를 뚫고 나가 연결이 통째로
+    # 끊기고, 끊긴 동안 지정가 체결 판정이 멈춘다 — 이 설계에서 가장 위험한
+    # 조용한 실패다. 프레임 하나를 버리는 편이 압도적으로 싸다.
+    try:
+        if channel == "trade":
+            return "trade", symbol, {"price": int(data["price"]),
+                                     "volume": int(data["volume"]),
+                                     "timestamp": data.get("timestamp")}
+        if channel == "orderbook":
+            lv = lambda side: [Level(int(x["price"]), int(x["volume"]))
+                               for x in data.get(side, [])]
+            return "orderbook", symbol, {"asks": lv("asks"), "bids": lv("bids")}
+    except (KeyError, ValueError, TypeError):
+        return None
     return None
 
 
@@ -1523,8 +1615,14 @@ class Feed:
         if self._ws is None:
             return
         self._seq += 1
-        await self._ws.send(json.dumps(
-            build_declaration(self._symbols, f"req-{self._seq}")))
+        try:
+            await self._ws.send(json.dumps(
+                build_declaration(self._symbols, f"req-{self._seq}")))
+        except Exception as exc:
+            # set_symbols가 이 코루틴을 fire-and-forget으로 띄우므로 예외를
+            # 받아 줄 사람이 없다. 여기서 알리지 않으면 구독 선언이 조용히
+            # 실패하고 화면은 멈춘 값을 계속 보여준다.
+            self.on_status("error", f"구독 선언 실패: {type(exc).__name__}: {exc}")
 
     async def _keepalive(self) -> None:
         # 순수 텍스트 'PING'이다. JSON으로 감싸면 서버가 못 알아듣는다.
@@ -2266,10 +2364,18 @@ Expected: 넷 다 통과
 - [ ] **Step 2: 주문 API가 코드에 없는지 확인한다**
 
 ```bash
-grep -rn "api/v1/orders\|api/v1/accounts" paper/ scrap.py && echo "제거하라" || echo "확인: 주문 경로 없음"
+grep -rnE "requests\.(post|put|patch|delete)" paper/ && echo "!! GET 외의 메서드가 있다" || echo "확인: GET만 사용"
+grep -rnE "_get\(\s*[\"'](orders|accounts)" paper/ && echo "!! 주문·계좌 경로 호출" || echo "확인: 주문·계좌 경로 호출 없음"
 ```
 
-Expected: `확인: 주문 경로 없음`
+Expected: 두 줄 다 `확인:`으로 끝난다.
+
+검사가 문자열 검색이 아니라 **구조 검사**인 이유: 처음에는 `api/v1/orders`라는
+문자열을 통째로 금지했는데, 그러면 "이 엔드포인트를 부르지 마라"는 경고문 자체가
+그 문자열을 담을 수 없어 경고가 무력해진다. 위험한 것의 이름을 부르지 못하는
+경고는 경고가 아니다. 실제로 막아야 할 것은 이름의 등장이 아니라 **호출**이므로,
+GET 외의 HTTP 메서드가 없다는 것과 주문·계좌 경로를 인자로 넘기지 않는다는 것을
+본다.
 
 - [ ] **Step 3: `CLAUDE.md`에 절을 추가한다**
 
