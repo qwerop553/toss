@@ -4,3 +4,4 @@ __pycache__/
 results.db
 results/
 paper.db
+market_data.db
