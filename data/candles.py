@@ -10,6 +10,7 @@
 DEFAULT_DB_PATH = "market_data.db"
 API_BASE = "https://openapi.tossinvest.com/api/v1/candles"
 
+import sys
 import sqlite3
 from typing import Optional
 
@@ -217,7 +218,7 @@ def _main():
 
     tickers = list(args.tickers)
     if args.kospi50:
-        from tickers import KOSPI50
+        from data.tickers import KOSPI50
         # 인자로 준 종목과 합치되 순서를 유지하고 중복은 제거한다
         tickers = list(dict.fromkeys(tickers + list(KOSPI50)))
     if not tickers:
@@ -240,4 +241,9 @@ def _main():
 
 
 if __name__ == "__main__":
+    # 윈도우 콘솔은 기본이 cp949라 em-dash(—) 같은 문자를 못 쓰고 UnicodeEncodeError로
+    # 죽는다. 리포 전체가 한국어 주석·메시지를 쓰는데 그중 한 글자 때문에 CLI가
+    # 통째로 멎는 건 과하다. 못 쓰는 글자만 대체하고 나머지는 그대로 간다.
+    sys.stdout.reconfigure(errors="replace")
+    sys.stderr.reconfigure(errors="replace")
     _main()

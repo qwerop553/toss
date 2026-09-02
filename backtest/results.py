@@ -48,6 +48,7 @@ import argparse
 import inspect
 import json
 import os
+import sys
 import sqlite3
 import time
 from functools import lru_cache
@@ -597,7 +598,7 @@ def selfcheck(name="PivotPointStrategy", ticker="005930", interval="1m") -> None
 
     # 접어 놓은 합계로 복원한 샤프가, 봉 시계열에서 직접 낸 샤프와 같은지 본다.
     # 캐시의 핵심 주장이 '접어도 봉 해상도가 유지된다'이므로 여기서 확인한다.
-    from metrics import sharpe_ratio
+    from backtest.metrics import sharpe_ratio
     sig = strategies.REGISTRY[name]().generate_signals(df)
     res = run_backtest(df, sig, buy_slippage=BUY_SLIPPAGE, sell_slippage=SELL_SLIPPAGE)
     capital = summarize(full, span="full")["capital"]
@@ -661,4 +662,9 @@ def main():
 
 
 if __name__ == "__main__":
+    # 윈도우 콘솔은 기본이 cp949라 em-dash(—) 같은 문자를 못 쓰고 UnicodeEncodeError로
+    # 죽는다. 리포 전체가 한국어 주석·메시지를 쓰는데 그중 한 글자 때문에 CLI가
+    # 통째로 멎는 건 과하다. 못 쓰는 글자만 대체하고 나머지는 그대로 간다.
+    sys.stdout.reconfigure(errors="replace")
+    sys.stderr.reconfigure(errors="replace")
     main()

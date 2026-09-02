@@ -8,6 +8,7 @@
 예전에는 backtest.py와 run_optimize.py 본문을 직접 고쳐 가며 돌렸다.
 이 파일이 그 둘을 대체한다.
 """
+import sys
 import argparse
 import os
 
@@ -22,7 +23,9 @@ from backtest.optimize import grid_search
 from backtest.report import print_summary, plot_backtest, to_daily_summary
 from backtest.validation import walk_forward_split
 
-GRAPH_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "graph")
+# 산출물은 backtest/ 안이 아니라 리포 루트에 모은다 (results.py의 results/와 같은 위치).
+GRAPH_DIR = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "graph")
 
 
 def run_one(name: str, ticker: str, interval: str, optimize: bool, metric: str,
@@ -188,4 +191,9 @@ def main():
 
 
 if __name__ == "__main__":
+    # 윈도우 콘솔은 기본이 cp949라 em-dash(—) 같은 문자를 못 쓰고 UnicodeEncodeError로
+    # 죽는다. 리포 전체가 한국어 주석·메시지를 쓰는데 그중 한 글자 때문에 CLI가
+    # 통째로 멎는 건 과하다. 못 쓰는 글자만 대체하고 나머지는 그대로 간다.
+    sys.stdout.reconfigure(errors="replace")
+    sys.stderr.reconfigure(errors="replace")
     main()
