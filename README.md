@@ -4,6 +4,12 @@
 
 핵심은 `paper/`다. 실시간 시세를 받아 브라우저에서 손으로 주문을 넣고, 체결·잔고·손익을 **가짜 돈**으로 추적한다.
 
+![모의투자 매매 화면](docs/screenshots/trading.jpg)
+
+장중 실화면. 왼쪽 관심종목, 가운데 분봉 차트, 오른쪽에 주문·미체결·보유·현금.
+`미체결`의 240,000원 지정가 매수는 시세(252,500원)보다 아래라 대기 중이고,
+`주문묶임 240,036원`은 예약금액이 **수수료까지 포함**해 잡힌다는 뜻이다.
+
 ```bash
 pip install fastapi uvicorn websockets requests pandas numpy python-dotenv
 python -m uvicorn paper.app:app --reload    # http://localhost:8000
@@ -69,6 +75,11 @@ python -m uvicorn paper.app:app --reload    # http://localhost:8000
 | 장 마감 | 미체결 주문을 만료시킨다. 안 하면 어제 지정가가 오늘 시세에 체결된다 |
 | 비용 | 수수료 0.015% (양방향) + 거래세 0.20% (매도) |
 | 초기자본 | 1,000만원 (`/api/reset`으로 변경 가능) |
+
+![호가창](docs/screenshots/orderbook.jpg)
+
+호가 10단이 웹소켓으로 실시간 갱신된다. 시장가 주문은 이 호가를 위에서부터
+다단으로 훑어 체결한다.
 
 **모델링하지 않는 것**: 큐 포지션. 내 앞에 줄 서 있던 물량을 무시하므로 실제보다 잘 체결된다.
 
