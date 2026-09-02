@@ -4,7 +4,25 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-한국 주식 분봉 백테스팅 하네스. 토스증권 OpenAPI에서 캔들을 받아 SQLite에 쌓고, 전략을 갈아끼우며 백테스트/그리드서치를 돌린다. 아직 실매매(paper/live) 코드는 없다 (`paper.ipynb`는 빈 스케치).
+토스증권 OpenAPI 기반 한국 주식 **모의투자 웹사이트**(`paper/`)와, 전략을 검증하는 분봉 **백테스팅 하네스**(`backtest/`). 중심은 모의투자 쪽이다. 실매매(live) 코드는 없고, 넣어서도 안 된다 — 아래 `paper/` 절의 sandbox 부재 경고를 읽어라.
+
+```
+toss/
+├── paper/          모의투자 웹앱 (FastAPI + 체결 시뮬레이션). 프로젝트의 중심
+│   ├── app.py broker.py feed.py toss.py ticks.py
+│   ├── static/index.html
+│   └── tests/                 assert 기반, 네트워크 없이 돈다
+├── backtest/       백테스팅 하네스
+│   ├── engine.py metrics.py optimize.py validation.py report.py grids.py
+│   └── run.py results.py      CLI 진입점
+├── strategies/     전략 41개 + indicators.py (paper·backtest가 공유)
+├── data/           candles.py(수집·조회) auth.py(토큰) tickers.py (양쪽 공유)
+└── docs/
+```
+
+`strategies/`와 `data/`가 두 패키지 바깥에 있는 이유: 전략을 골라 자동매매를 붙일 때 `paper/`가 `backtest/`를 거치지 않고 전략을 직접 import할 수 있어야 한다. **`paper/`는 `backtest/`를 import하지 않는다** — 이 방향을 뒤집지 마라.
+
+`data/auth.py`를 `data/candles.py`에서 떼어 둔 이유도 같다. candles는 pandas·sqlite를 끌고 오는데, `paper/`는 토큰만 필요하다.
 
 주석·docstring은 한국어다. 새 코드도 한국어로 맞춰라.
 
@@ -13,33 +31,33 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 프레임워크 없음. 빌드/린트 파이프라인도 없고 `requirements.txt`도 없다 (pandas, numpy, requests, python-dotenv, matplotlib, fastapi, uvicorn, websockets가 전역 설치되어 있다).
 
 ```bash
-python scrap.py 005930 000660 --interval 1m        # 캔들 수집 → market_data.db (증분)
-python scrap.py --kospi50 --check                   # tickers.KOSPI50 종목코드 유효성만 확인
-python scrap.py --kospi50 --interval 1m             # 50종목 전량 수집 (1시간 이상)
-python run.py EmaCrossStrategy --ticker 005930      # 단일 백테스트
-python run.py EmaCrossStrategy --ticker 005930 --optimize --plot --daily
-python run.py EmaCrossStrategy --ticker 005930 --full   # walk-forward 없이 전 구간 (in-sample)
-python run.py --all --ticker 005930 000660          # 전략 × 종목 순위표
+python -m data.candles 005930 000660 --interval 1m   # 캔들 수집 → market_data.db (증분)
+python -m data.candles --kospi50 --check             # tickers.KOSPI50 종목코드 유효성만 확인
+python -m data.candles --kospi50 --interval 1m       # 50종목 전량 수집 (1시간 이상)
+python -m backtest.run EmaCrossStrategy --ticker 005930      # 단일 백테스트
+python -m backtest.run EmaCrossStrategy --ticker 005930 --optimize --plot --daily
+python -m backtest.run EmaCrossStrategy --ticker 005930 --full   # walk-forward 없이 전 구간 (in-sample)
+python -m backtest.run --all --ticker 005930 000660          # 전략 × 종목 순위표
 
-python results.py                                   # 전 전략 × KOSPI50 증분 평가 + 리포트
-python results.py --ticker 005930 --strategy PivotPointStrategy
-python results.py --report-only                     # 계산 없이 캐시로 리포트만 재생성
-python results.py --selfcheck                       # 증분 = 전량 재계산인지 검증
+python -m backtest.results                                   # 전 전략 × KOSPI50 증분 평가 + 리포트
+python -m backtest.results --ticker 005930 --strategy PivotPointStrategy
+python -m backtest.results --report-only                     # 계산 없이 캐시로 리포트만 재생성
+python -m backtest.results --selfcheck                       # 증분 = 전량 재계산인지 검증
 
 python -m uvicorn paper.app:app --reload            # 모의투자 웹사이트
 ```
 
-`run.py`가 실행·최적화·비교를 모두 담당한다. 파일을 열어 고칠 필요 없이 플래그로 제어한다. `--optimize`는 `grids.py`의 탐색 범위로 train 그리드서치를 돌린 뒤 그 파라미터를 test 구간에 적용해 out-of-sample로 보고한다.
+`backtest/run.py`가 실행·최적화·비교를 모두 담당한다. 파일을 열어 고칠 필요 없이 플래그로 제어한다. `--optimize`는 `backtest/grids.py`의 탐색 범위로 train 그리드서치를 돌린 뒤 그 파라미터를 test 구간에 적용해 out-of-sample로 보고한다.
 
 ## 파이프라인
 
 ```
-scrap.load_candles(ticker, interval)  →  DataFrame[timestamp, open, high, low, close, volume]
-validation.walk_forward_split(df)     →  (train 70%, test 30%), 둘 다 인덱스 리셋됨
+data.candles.load_candles(ticker, interval)  →  DataFrame[timestamp, open, high, low, close, volume]
+backtest.validation.walk_forward_split(df)     →  (train 70%, test 30%), 둘 다 인덱스 리셋됨
 Strategy.generate_signals(df)         →  Series of {-1, 0, 1}
-backtest_engine.run_backtest(df, sig) →  BacktestResult
-metrics.* / print_summary.*           →  지표, 콘솔 리포트, matplotlib figure, 일별 집계
-optimize.grid_search(...)             →  위 4단계를 파라미터 조합마다 반복
+backtest.engine.run_backtest(df, sig) →  BacktestResult
+backtest.metrics / backtest.report           →  지표, 콘솔 리포트, matplotlib figure, 일별 집계
+backtest.optimize.grid_search(...)             →  위 4단계를 파라미터 조합마다 반복
 ```
 
 ## 핵심 계약과 함정
@@ -56,7 +74,7 @@ optimize.grid_search(...)             →  위 4단계를 파라미터 조합마
 
 **전략 자동 등록**: `strategies/__init__.py`가 `pkgutil.walk_packages`로 하위 패키지를 전부 훑어 `Strategy` 서브클래스를 `globals()`와 `__all__`에 밀어넣는다. 새 전략은 `strategies/<카테고리>/<파일>.py`에 클래스만 만들면 `from strategies import *`로 바로 잡힌다 — 수동 export 불필요. 대신 카테고리 폴더에 `__init__.py`가 있어야 하고, import 시점에 모든 전략 모듈이 실행되므로 모듈 최상단에 무거운 작업을 두면 안 된다.
 
-**전략 카테고리**: `trend_following`(EMA/MACD/돈치안/삼중이평/DMI/슈퍼트렌드/SAR/일목/하이킨아시/Aroon/Vortex/TRIX), `mean_reversion`(볼린저/RSI/Z-Score/스토캐스틱/%R/CCI/켈트너/VWAP/ConnorsRSI2/Fisher/궁극오실레이터), `momentum`(ROC/MFI/OBV/거래량급증/강도지수/CMF/AO), `volatility`(ATR채널돌파/볼린저스퀴즈/NR7돌파), `session_based`(개장·마감 시간 규칙, ORB, 변동성 돌파, 갭 메움, 전일 피봇). 총 41개가 등록되어 있고 `python run.py --all`이 전부 돌린다.
+**전략 카테고리**: `trend_following`(EMA/MACD/돈치안/삼중이평/DMI/슈퍼트렌드/SAR/일목/하이킨아시/Aroon/Vortex/TRIX), `mean_reversion`(볼린저/RSI/Z-Score/스토캐스틱/%R/CCI/켈트너/VWAP/ConnorsRSI2/Fisher/궁극오실레이터), `momentum`(ROC/MFI/OBV/거래량급증/강도지수/CMF/AO), `volatility`(ATR채널돌파/볼린저스퀴즈/NR7돌파), `session_based`(개장·마감 시간 규칙, ORB, 변동성 돌파, 갭 메움, 전일 피봇). 총 41개가 등록되어 있고 `python -m backtest.run --all`이 전부 돌린다.
 
 전부 롱 온리다. `run_backtest`에 공매도 경로가 없어서(`sig == -1`은 `holdings > 0`일 때만 처리) 페어 트레이딩처럼 양방향이 필요한 전략은 엔진을 고치기 전까지 구현할 수 없다.
 
@@ -72,9 +90,9 @@ optimize.grid_search(...)             →  위 4단계를 파라미터 조합마
 
 **`max_drawdown`과 `calmar_ratio`는 `capital` 인자를 요구한다.** `equity_curve`는 자본이 아니라 0에서 시작하는 누적 손익이라, 예전처럼 `running_max`로 나누면 분모가 0을 지나가며 `-inf`가 나왔다. 지금은 투입원금(`result.max_book_size`) 대비로 계산한다 — `result.returns`와 분모가 같아서 샤프와 기준이 맞는다. 호출할 때 `max_drawdown(result.equity_curve, result.max_book_size)` 형태로 넘겨라.
 
-## 결과 캐시 (`results.py`)
+## 결과 캐시 (`backtest/results.py`)
 
-전 전략 × 전 종목을 매번 처음부터 돌리지 않기 위한 일 단위 캐시다. `run.py`와는 별개 경로이고, `run.py`는 전혀 건드리지 않았다.
+전 전략 × 전 종목을 매번 처음부터 돌리지 않기 위한 일 단위 캐시다. `backtest/run.py`와는 별개 경로이고, `backtest/run.py`는 전혀 건드리지 않았다.
 
 **왜 이어붙일 수 있나**: `run_backtest`는 순차 시뮬레이션이고 봉과 봉 사이로 넘어가는 상태가 `holdings` 하나뿐이다. 그래서 엔진에 `holdings0` 인자를 붙여 마지막 저장 지점의 보유량을 되돌려 넣고, 누적 실현현금은 호출자(`results.evaluate`)가 `equity - holdings × close`로 복원해 더한다. 결과는 처음부터 돌린 것과 같다 — 실현현금을 뺄셈으로 복원하는 탓에 마지막 몇 비트만 달라지고, `--selfcheck`가 누적손익·체결·지표를 오차 1e-9 이내로 매번 검증한다.
 
@@ -84,9 +102,9 @@ optimize.grid_search(...)             →  위 4단계를 파라미터 조합마
 
 **MDD만 근사다.** 봉마다 누적 최고점을 들고 있어야 정확한데 그러면 캐시할 이유가 없다. 하루 안에서 고점이 저점보다 먼저 왔다고 가정한 **상한**을 낸다 — 실제 낙폭은 이보다 얕거나 같다.
 
-**`run.py`와 숫자가 완전히 같지는 않다.** 전 구간을 끊지 않고 이어서 돌리므로 train에서 들고 있던 포지션이 test 시작 시점에 넘어온다. `run.py`는 test 슬라이스를 무포지션에서 시작한다.
+**`backtest/run.py`와 숫자가 완전히 같지는 않다.** 전 구간을 끊지 않고 이어서 돌리므로 train에서 들고 있던 포지션이 test 시작 시점에 넘어온다. `backtest/run.py`는 test 슬라이스를 무포지션에서 시작한다.
 
-**캐시 무효화**: 행마다 전략 소스 + `indicators.py` + `base.py` + `backtest_engine.py`의 mtime 최댓값(`fp`)을 박아 둔다. 코드를 고치면 그 전략의 행만 버려지고 다시 계산된다. 스키마를 바꿀 때는 `SCHEMA_VERSION`을 올리면 테이블이 통째로 재생성된다.
+**캐시 무효화**: 행마다 전략 소스 + `indicators.py` + `base.py` + `backtest/engine.py`의 mtime 최댓값(`fp`)을 박아 둔다. 코드를 고치면 그 전략의 행만 버려지고 다시 계산된다. 스키마를 바꿀 때는 `SCHEMA_VERSION`을 올리면 테이블이 통째로 재생성된다.
 
 출력은 `results.db`(기계용, gitignore 대상), `results/report.md`(전략 순위 + 상위 5개 상세), `results/detail.csv`(전 조합). 실측: 2종목 × 41전략 콜드 37초 → 웜 6초. 전량(41전략 × 50종목 = 2050조합) 콜드 약 17분 → 웜 238초.
 
@@ -95,7 +113,7 @@ optimize.grid_search(...)             →  위 4단계를 파라미터 조합마
     pip install fastapi uvicorn websockets     # 최초 1회
     python -m uvicorn paper.app:app --reload   # http://localhost:8000
 
-토스 실시간 시세를 받아 브라우저에서 손으로 주문을 넣고, 체결·잔고·손익을 가짜 돈으로 추적한다. 백테스팅 하네스와는 별개 경로다 — `strategies/`, `run.py`, `results.py`를 건드리지 않는다.
+토스 실시간 시세를 받아 브라우저에서 손으로 주문을 넣고, 체결·잔고·손익을 가짜 돈으로 추적한다. 백테스팅 하네스와는 별개 경로다 — `strategies/`, `backtest/run.py`, `backtest/results.py`를 건드리지 않는다.
 
 **토스에는 모의투자 sandbox가 없다.** 서버가 실서버 하나뿐이라 `POST /api/v1/orders`를 부르면 실제 돈이 나간다. 그래서 `paper/toss.py`는 읽기 전용 함수만 노출하고, 코드 어디에도 주문·계좌 경로가 등장하지 않는다. 실매매가 필요해지면 별도 결정으로 다뤄라. 이 경계를 지키는 안전 점검은 문자열 검색이 아니라 **구조 검사**다: `paper/`에 GET 외의 HTTP 메서드가 없는지, 그리고 요청 헬퍼에 `orders`·`accounts` 경로가 인자로 넘어가는 자리가 없는지를 본다. 예전에는 `api/v1/orders`라는 문자열 자체를 금지했는데, 그러면 "이 엔드포인트를 부르지 마라"는 경고문이 그 문자열을 담을 수 없어 경고가 무력해졌다 — 위험한 것의 이름을 부르지 못하는 경고는 경고가 아니다.
 
@@ -121,13 +139,13 @@ optimize.grid_search(...)             →  위 4단계를 파라미터 조합마
 
 **예약금액·체결금액은 수수료까지 포함해서 계산한다.** `reserved()`와 `_validate`의 지정가 분기가 둘 다 `round(gross * FEE_RATE)`를 더하고, `_sweep_cost`도 `_record_fill`과 맞춰 호가 단마다 반올림한다. 이걸 빼먹으면 보유 현금을 정확히 다 쓰는 주문이 검증은 통과하고 잔고를 마이너스로 만든다.
 
-테스트: `python paper/test_broker.py` (체결 엔진), `test_ticks.py`, `test_toss.py`, `test_feed.py`. 프레임워크 없이 assert 기반이다.
+테스트: `python paper/tests/test_broker.py` (체결 엔진), `tests/test_ticks.py`, `tests/test_toss.py`, `tests/test_feed.py`. 프레임워크 없이 assert 기반이다.
 
 ## 데이터
 
 `market_data.db` (SQLite, 리포에 커밋되어 있음, 14MB). 테이블 `candles`, PK `(ticker, timeframe, timestamp)` — `INSERT OR IGNORE` 증분 수집이라 재실행해도 안전하다. `timestamp`는 TEXT로 저장되고 `load_candles`가 읽을 때 datetime으로 파싱한다.
 
-`scrap.py`는 `.env`의 `TOSS_CLIENT_ID` / `TOSS_CLIENT_SECRET`으로 토큰을 자동 발급·캐시한다 (만료 60초 전 갱신). 토큰 401이 아니라 **IP 미등록**으로 실패하는 경우가 많다.
+`data/auth.py`가 `.env`의 `TOSS_CLIENT_ID` / `TOSS_CLIENT_SECRET`으로 토큰을 자동 발급·캐시한다 (만료 60초 전 갱신). 토큰 401이 아니라 **IP 미등록**으로 실패하는 경우가 많다.
 
 ## 리포 위생
 

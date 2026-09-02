@@ -5,3 +5,6 @@ results.db
 results/
 paper.db
 market_data.db
+
+# 백테스트 그림 출력
+graph/

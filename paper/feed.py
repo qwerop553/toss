@@ -15,7 +15,7 @@ import json
 import websockets
 
 from paper.broker import Level
-from scrap import get_access_token
+from data.auth import get_access_token
 
 WS_URL = "wss://openapi-ws.tossinvest.com/ws/v1"
 

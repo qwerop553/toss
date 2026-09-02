@@ -15,7 +15,21 @@ pip install fastapi uvicorn websockets requests pandas numpy python-dotenv
 python -m uvicorn paper.app:app --reload    # http://localhost:8000
 ```
 
-`.env`에 `TOSS_CLIENT_ID` / `TOSS_CLIENT_SECRET`이 필요하다. 토큰은 `scrap.py`가 자동 발급·캐시한다(만료 60초 전 갱신). 401보다 **IP 미등록**으로 막히는 경우가 더 잦으니, 실패하면 토큰부터 의심하지 말고 토스 개발자센터의 허용 IP를 먼저 확인해라.
+`.env`에 `TOSS_CLIENT_ID` / `TOSS_CLIENT_SECRET`이 필요하다. 토큰은 `data/auth.py`가 자동 발급·캐시한다(만료 60초 전 갱신). 401보다 **IP 미등록**으로 막히는 경우가 더 잦으니, 실패하면 토큰부터 의심하지 말고 토스 개발자센터의 허용 IP를 먼저 확인해라.
+
+## 구조
+
+```
+toss/
+├── paper/          모의투자 웹앱 — 이 프로젝트의 중심
+├── backtest/       백테스팅 하네스 (엔진·지표·최적화·CLI)
+├── strategies/     매매 전략 41개 (양쪽이 공유)
+├── data/           시세 수집·조회, 토스 토큰 (양쪽이 공유)
+└── docs/
+```
+
+`strategies/`와 `data/`를 양쪽 바깥에 둔 이유는, 전략을 골라 자동매매를 붙일 때
+`paper/`가 `backtest/`를 거치지 않고 전략을 그대로 가져다 쓸 수 있어야 해서다.
 
 ---
 
@@ -53,6 +67,7 @@ python -m uvicorn paper.app:app --reload    # http://localhost:8000
 | `ticks.py` | 호가단위 표와 지정가 유효성 |
 | `toss.py` | 읽기 전용 REST 래퍼 |
 | `static/index.html` | 화면 전부 (토스증권 톤, 빌드 없음) |
+| `tests/` | assert 기반 테스트 4개 |
 
 `broker.py`가 네트워크를 모르는 게 설계의 중심이다. 입력은 '호가 스냅샷(`Book`)'과 '체결 프린트'라는 평범한 값이고 출력은 체결 기록이라, 테스트가 가짜 데이터만으로 돌아간다.
 
@@ -120,10 +135,10 @@ python -m uvicorn paper.app:app --reload    # http://localhost:8000
 ### 테스트
 
 ```bash
-python paper/test_broker.py   # 체결 엔진
-python paper/test_ticks.py    # 호가단위
-python paper/test_toss.py     # REST 응답 파싱
-python paper/test_feed.py     # 웹소켓 프레임 파싱
+python paper/tests/test_broker.py   # 체결 엔진
+python paper/tests/test_ticks.py    # 호가단위
+python paper/tests/test_toss.py     # REST 응답 파싱
+python paper/tests/test_feed.py     # 웹소켓 프레임 파싱
 ```
 
 프레임워크 없이 assert 기반이고, 전부 네트워크 없이 돈다.
@@ -132,18 +147,18 @@ python paper/test_feed.py     # 웹소켓 프레임 파싱
 
 ## 백테스팅 하네스
 
-같은 리포에 분봉 백테스팅이 들어 있다. 모의투자와는 **완전히 별개 경로**다 — `paper/`는 `strategies/`·`run.py`·`results.py`를 건드리지 않는다.
+같은 리포에 분봉 백테스팅이 들어 있다. 모의투자와는 **별개 경로**다 — `paper/`는 `backtest/`를 import하지 않는다.
 
 ```bash
-python scrap.py 005930 000660 --interval 1m      # 캔들 수집 → market_data.db
-python run.py EmaCrossStrategy --ticker 005930 --optimize --plot
-python run.py --all --ticker 005930              # 전략 × 종목 순위표
-python results.py                                # 전 전략 × KOSPI50 증분 평가
+python -m data.candles 005930 000660 --interval 1m   # 캔들 수집 → market_data.db
+python -m backtest.run EmaCrossStrategy --ticker 005930 --optimize --plot
+python -m backtest.run --all --ticker 005930         # 전략 × 종목 순위표
+python -m backtest.results                           # 전 전략 × KOSPI50 증분 평가
 ```
 
 ```
-load_candles → walk_forward_split(70/30) → Strategy.generate_signals
-             → run_backtest → metrics / 리포트
+data.candles.load_candles → backtest.validation.walk_forward_split(70/30)
+  → Strategy.generate_signals → backtest.engine.run_backtest → backtest.metrics
 ```
 
 전략은 `strategies/<카테고리>/<파일>.py`에 클래스만 만들면 자동 등록된다. 현재 41개(추세추종/평균회귀/모멘텀/변동성/세션기반)가 등록돼 있고 전부 롱 온리다.

@@ -14,7 +14,7 @@ from datetime import datetime, timedelta, timezone
 import requests
 
 from paper.broker import Book, Level, Session
-from scrap import get_access_token
+from data.auth import get_access_token
 
 API = "https://openapi.tossinvest.com/api/v1"
 

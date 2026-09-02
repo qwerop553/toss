@@ -97,7 +97,7 @@ class Strategy(ABC):
 
     def generate_signals(self, df: pd.DataFrame) -> pd.Series:
         """
-        df: scrap.load_candles()가 반환하는 OHLCV 데이터프레임
+        df: candles.load_candles()가 반환하는 OHLCV 데이터프레임
         반환값: index가 df와 같고 값이 {-1, 0, 1}(매도, 유지, 매수)인 Series
 
         엔진은 이 인터페이스만 본다. 기본 구현은 entries/exits를 상태머신에
