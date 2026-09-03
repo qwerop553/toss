@@ -182,6 +182,47 @@ GRIDS: dict[str, dict] = {
         "entry_ratio": [0.5, 0.75, 1.0, 1.25],
         "exit_at": ["pivot", "r1"],
     },
+    # 오후 전략 넷은 after_bar(진입 허용 시각)가 가장 민감한 축이다. 실측에서
+    # 임계값을 바꾸는 것보다 시각을 바꾸는 쪽이 결과를 훨씬 크게 흔들었다.
+    "AfternoonOversoldStrategy": {
+        "period": [7, 14, 21],
+        "oversold": [20, 25, 30, 35],
+        "after_bar": [240, 270, 300],
+    },
+    "AfternoonRangeBottomStrategy": {
+        "pos_threshold": [0.05, 0.1, 0.2, 0.3],
+        "after_bar": [240, 270, 300],
+    },
+    "GapDownOpenFadeStrategy": {
+        "gap_pct": [0.002, 0.003, 0.005],
+        "entry_to": [20, 35, 50],
+        "exit_bar": [50, 65, 90],
+    },
+    # stop_below_vwap은 실측에서 켜는 순간 알파가 통째로 뒤집혔다. 그리드에
+    # 남겨 둔 이유는 '왜 껐는지'를 다시 재현해 볼 수 있게 하려는 것뿐이다.
+    "AfternoonVwapRecoveryStrategy": {
+        "after_bar": [120, 180, 240],
+        "stop_below_vwap": [True, False],
+    },
+    "GapUpFadeRecoveryStrategy": {
+        "gap_pct": [0.002, 0.003, 0.005],
+        "after_bar": [240, 270, 300],
+    },
+    # 정식(formulaic) 알파는 수식 자체에 손댈 파라미터가 없다. 논문 상수를 바꾸면
+    # 그건 더 이상 그 알파가 아니다. 그래서 탐색 축은 알파값을 신호로 바꾸는
+    # 껍데기 쪽(백분위 문턱과 비교 구간)뿐이다.
+    "Alpha006Strategy": {"window": [250, 500], "entry_q": [0.8, 0.9, 0.95], "exit_q": [0.5, 0.3, 0.1]},
+    "Alpha012Strategy": {"window": [250, 500], "entry_q": [0.8, 0.9, 0.95], "exit_q": [0.5, 0.3, 0.1]},
+    "Alpha026Strategy": {"window": [250, 500], "entry_q": [0.6, 0.7, 0.8], "exit_q": [0.5, 0.3]},
+    "Alpha035Strategy": {"window": [250, 500], "entry_q": [0.8, 0.9, 0.95], "exit_q": [0.5, 0.3, 0.1]},
+    "Alpha101Strategy": {"window": [250, 500], "entry_q": [0.8, 0.9, 0.95], "exit_q": [0.5, 0.3, 0.1]},
+    # 미시구조 전략도 수식이 아니라 껍데기(백분위 문턱)만 탐색한다.
+    # period는 추정량의 창이라 바꾸면 다른 추정량이 되므로 좁게 둔다.
+    "AmihudIlliquidityStrategy": {"period": [10, 20, 40], "entry_q": [0.8, 0.9, 0.95], "exit_q": [0.5, 0.3]},
+    "RollSpreadStrategy": {"period": [10, 20, 40], "entry_q": [0.8, 0.9, 0.95], "exit_q": [0.5, 0.3]},
+    "OrderFlowImbalanceStrategy": {"period": [5, 10, 20], "entry_q": [0.8, 0.9, 0.95], "exit_q": [0.5, 0.3]},
+    "AdverseSelectionStrategy": {"period": [10, 20, 40], "entry_q": [0.8, 0.9, 0.95], "exit_q": [0.5, 0.3]},
+    # OvernightInventoryStrategy는 시각 규칙이라 탐색할 파라미터가 없다.
 }
 
 

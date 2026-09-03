@@ -180,6 +180,30 @@ def is_last_bar_of_day(df: pd.DataFrame) -> pd.Series:
     return flags
 
 
+def bar_of_day(df: pd.DataFrame) -> pd.Series:
+    """
+    그날 몇 번째 봉인가(0부터). 시간대 조건("13시 이후")을 거는 데 쓴다.
+
+    벽시계 시각(09:00, 13:00)이 아니라 순번으로 세는 이유:
+      거래가 없는 분은 봉 자체가 오지 않는다. 시각으로 자르면 종목마다 결측 위치가
+      달라 같은 조건이 다른 지점을 가리키고, 순번으로 세면 '개장 후 N번째 체결 분'이라
+      뜻이 일정해진다. OpeningRangeBreakoutStrategy가 박스 길이를 셀 때 쓰는 방식과
+      같다.
+    """
+    return df.groupby(bar_dates(df)).cumcount()
+
+
+def day_open(df: pd.DataFrame) -> pd.Series:
+    """
+    당일 시가를 봉 단위로 펼친다. '지금 시가 위인가 아래인가'가 기준선인 전략용.
+
+    prev_day_ohlc와 달리 shift가 없다 — 시가는 그날 첫 봉에 이미 확정된 값이라
+    당일 봉이 참조해도 미래를 보는 게 아니다.
+    """
+    d = bar_dates(df)
+    return d.map(df.groupby(d)["open"].first())
+
+
 def session_vwap(df: pd.DataFrame) -> pd.Series:
     """
     당일 누적 거래량가중평균가. 매일 장 시작에 리셋된다.

@@ -15,7 +15,7 @@ toss/
 ├── backtest/       백테스팅 하네스
 │   ├── engine.py metrics.py optimize.py validation.py report.py grids.py
 │   └── run.py results.py      CLI 진입점
-├── strategies/     전략 41개 + indicators.py (paper·backtest가 공유)
+├── strategies/     전략 56개 + indicators.py (paper·backtest가 공유)
 ├── data/           candles.py(수집·조회) auth.py(토큰) tickers.py (양쪽 공유)
 └── docs/
 ```
@@ -44,6 +44,9 @@ python -m backtest.results --ticker 005930 --strategy PivotPointStrategy
 python -m backtest.results --report-only                     # 계산 없이 캐시로 리포트만 재생성
 python -m backtest.results --selfcheck                       # 증분 = 전량 재계산인지 검증
 
+python -m data.candles --kospi50 --interval 1d       # 일봉 수집 (몇 분이면 끝난다)
+python -m backtest.run Alpha006Strategy --ticker 005930 --interval 1d   # 정식 알파는 일봉으로 본다
+
 python -m uvicorn paper.app:app --reload            # 모의투자 웹사이트
 ```
 
@@ -70,11 +73,31 @@ backtest.optimize.grid_search(...)             →  위 4단계를 파라미터 
 
 동시 신호 규칙: 미보유면 진입이 이기고, 보유 중이면 청산이 이긴다. 마지막 봉에서 강제 청산하지 않으며, 미청산 포지션은 왕복 거래로 집계하지 않고 리포트에 따로 표시한다.
 
-**공용 지표는 `strategies/indicators.py`에 있다.** ATR·RSI·ADX·스토캐스틱·CCI·MFI·OBV·볼린저·켈트너·돈치안·Aroon·Vortex·TRIX·강도지수·CMF·AO·궁극오실레이터·Fisher, 그리고 세션 헬퍼(`bar_dates`, `is_last_bar_of_day`, `session_vwap`, `prev_day_ohlc`)까지. 새 전략은 지표를 직접 짜지 말고 여기서 가져다 쓴다. 기존 전략(`rsi_reversion` 등)은 자기 파일 안에 지표를 갖고 있다.
+**공용 지표는 `strategies/indicators.py`에 있다.** ATR·RSI·ADX·스토캐스틱·CCI·MFI·OBV·볼린저·켈트너·돈치안·Aroon·Vortex·TRIX·강도지수·CMF·AO·궁극오실레이터·Fisher, 그리고 세션 헬퍼(`bar_dates`, `bar_of_day`, `day_open`, `is_last_bar_of_day`, `session_vwap`, `prev_day_ohlc`)까지. 새 전략은 지표를 직접 짜지 말고 여기서 가져다 쓴다. 기존 전략(`rsi_reversion` 등)은 자기 파일 안에 지표를 갖고 있다.
 
-**전략 자동 등록**: `strategies/__init__.py`가 `pkgutil.walk_packages`로 하위 패키지를 전부 훑어 `Strategy` 서브클래스를 `globals()`와 `__all__`에 밀어넣는다. 새 전략은 `strategies/<카테고리>/<파일>.py`에 클래스만 만들면 `from strategies import *`로 바로 잡힌다 — 수동 export 불필요. 대신 카테고리 폴더에 `__init__.py`가 있어야 하고, import 시점에 모든 전략 모듈이 실행되므로 모듈 최상단에 무거운 작업을 두면 안 된다.
+**전략 자동 등록**: `strategies/__init__.py`가 `pkgutil.walk_packages`로 하위 패키지를 전부 훑어 `Strategy` 서브클래스를 `globals()`와 `__all__`에 밀어넣는다. **`inspect.isabstract`인 클래스는 뺀다** — 전략 모듈이 자기 중간 베이스를 import하면 `inspect.getmembers`가 그 베이스도 잡아서 전략으로 등록해 버리고, `--all`이 그걸 인스턴스화하다 터진다(`Strategy` 자신은 `obj is not Strategy`로 이미 빠지지만 `formulaic.base.FormulaicAlpha` 같은 중간 베이스는 그 조건에 안 걸린다). 중간 베이스를 만들 때는 확장점에 `@abstractmethod`를 붙여라 — 그게 '이건 전략이 아니라 뼈대다'라고 말하는 방법이다. 모듈명이 `base`면 walk 자체에서도 빠진다(`_EXCLUDED`). 새 전략은 `strategies/<카테고리>/<파일>.py`에 클래스만 만들면 `from strategies import *`로 바로 잡힌다 — 수동 export 불필요. 대신 카테고리 폴더에 `__init__.py`가 있어야 하고, import 시점에 모든 전략 모듈이 실행되므로 모듈 최상단에 무거운 작업을 두면 안 된다.
 
-**전략 카테고리**: `trend_following`(EMA/MACD/돈치안/삼중이평/DMI/슈퍼트렌드/SAR/일목/하이킨아시/Aroon/Vortex/TRIX), `mean_reversion`(볼린저/RSI/Z-Score/스토캐스틱/%R/CCI/켈트너/VWAP/ConnorsRSI2/Fisher/궁극오실레이터), `momentum`(ROC/MFI/OBV/거래량급증/강도지수/CMF/AO), `volatility`(ATR채널돌파/볼린저스퀴즈/NR7돌파), `session_based`(개장·마감 시간 규칙, ORB, 변동성 돌파, 갭 메움, 전일 피봇). 총 41개가 등록되어 있고 `python -m backtest.run --all`이 전부 돌린다.
+**전략 카테고리**: `trend_following`(EMA/MACD/돈치안/삼중이평/DMI/슈퍼트렌드/SAR/일목/하이킨아시/Aroon/Vortex/TRIX), `mean_reversion`(볼린저/RSI/Z-Score/스토캐스틱/%R/CCI/켈트너/VWAP/ConnorsRSI2/Fisher/궁극오실레이터), `momentum`(ROC/MFI/OBV/거래량급증/강도지수/CMF/AO), `volatility`(ATR채널돌파/볼린저스퀴즈/NR7돌파), `session_based`(개장·마감 시간 규칙, ORB, 변동성 돌파, 갭 메움, 전일 피봇, 갭 하락 개장 페이드, 오후 VWAP 회복, 갭 상승 페이드 회복), `formulaic`(WorldQuant 101 알파 중 5개), `microstructure`(스프레드·유동성·주문흐름 추정량). 총 56개가 등록되어 있고 `python -m backtest.run --all`이 전부 돌린다.
+
+**분봉 알파는 거래당 23bp를 넘겨야 존재한다.** 슬리피지가 매수 0.015% + 매도 0.215%라 왕복 23bp가 고정으로 나간다. 기존 41개 전략의 결과를 `거래당 비용 전 총수익`으로 다시 세워 보면 이 선을 넘는 건 세션 계열 몇 개뿐이고, 지표 크로스오버 계열은 총수익이 양수여도 거래 수에 비용을 곱하는 순간 전부 죽는다. 새 전략을 평가할 때 수익률·샤프보다 먼저 볼 숫자는 `총수익 / 왕복 수`다 — 이 값이 23bp 근처면 표본이 늘었을 때 뒤집힌다.
+
+**오후 되돌림 전략군** (`AfternoonOversold`, `AfternoonRangeBottom`, `AfternoonVwapRecovery`, `GapUpFadeRecovery`, `GapDownOpenFade`)은 1분봉 이벤트 스터디에서 나왔다. 공통 형태는 '개장 후 N봉 이후에 진입 → 그날 마지막 봉에 청산, 오버나잇 없음'이다. 가장 민감한 파라미터는 임계값이 아니라 **진입 허용 시각(`after_bar`)**이고, 눌림을 사는 셋은 늦을수록(≈13:30) 좋아지고 회복을 사는 `AfternoonVwapRecovery`만 이를수록(≈12:00) 좋아진다. 중간 손절을 달면 알파가 사라진다 — 이 알파는 진입 조건이 아니라 '진입부터 종가까지'라는 구간에 붙어 있다(`afternoon_vwap_recovery.py` 참고).
+
+다섯 중 종목 out-of-sample까지 통과한 것은 둘뿐이다. 거래당 비용 전 총수익(왕복비용 23bp) 기준:
+
+| 전략 | 튜닝에 쓴 30종목 | 안 쓴 20종목 | 종목양수 | 판정 |
+|---|---|---|---|---|
+| `GapUpFadeRecovery` | +51.6bp (t=4.7) | +65.9bp (t=5.1) | 90% | 통과 |
+| `AfternoonRangeBottom` | +49.5bp (t=4.8) | +46.9bp (t=4.3) | 85% | 통과 |
+| `AfternoonOversold` | +36.8bp (t=4.8) | +24.1bp (t=3.7) | 55% | 경계선(비용 후 본전) |
+| `GapDownOpenFade` | +37.7bp (t=3.2) | +25.6bp (t=1.8) | 45% | 탈락 |
+| `AfternoonVwapRecovery` | +32.9bp (t=4.0) | +12.1bp (t=1.5) | 35% | 탈락 |
+
+**전략 검증은 종목축으로 갈라라. 시간축(train/test)은 이 데이터에서 OOS 구실을 못 한다.** 거래일이 종목당 28일뿐이라 뒤 30%는 8~9일이고, 그 구간에 시장이 반등하면 전략 품질과 무관하게 거의 모든 전략의 test 숫자가 좋아진다 — 실제로 `OpeningRangeBreakout`은 train −44.9bp / test +22.0bp로 뒤집힌다. 종목을 갈라 재는 쪽은 이런 공통 요인이 양쪽에 똑같이 걸려서 상쇄된다.
+
+**이벤트 스터디 숫자는 실현 엣지의 두 배쯤으로 나온다.** 스터디는 조건을 만족한 '모든 봉'을 평균하는데 전략은 그날의 '첫 봉'에서만 산다. 눌림이 깊을수록 조건이 오래 참이라 스터디는 더 극단적인 지점들을 함께 세고, 전략은 그 구간의 가장 이른 지점에 붙는다. 스터디에서 23bp를 겨우 넘는 조건은 전략으로 만들면 반드시 죽는다 — 후보를 거를 때 문턱을 두 배로 잡아라.
+
+**`bars_left` 같은 '그날 총 봉 수' 기반 조건은 lookahead다.** 하루의 봉 개수는 장이 끝나야 확정되므로 오후 진입 조건에 쓰면 미래를 보는 셈이 된다. 마감 직전 진입을 막고 싶으면 `bar_of_day(df) <= max_entry_bar`처럼 순번 상한으로 잘라라. `strategies/tests/test_session_alpha.py`의 truncation invariance 검사가 이걸 잡는다.
 
 전부 롱 온리다. `run_backtest`에 공매도 경로가 없어서(`sig == -1`은 `holdings > 0`일 때만 처리) 페어 트레이딩처럼 양방향이 필요한 전략은 엔진을 고치기 전까지 구현할 수 없다.
 
@@ -89,6 +112,61 @@ backtest.optimize.grid_search(...)             →  위 4단계를 파라미터 
 **시간 기반 전략**은 분봉 전제다. `session_close.py`는 `timestamp` 컬럼을, `opening.py`는 DatetimeIndex로 변환해서 쓴다 — 두 전략이 인덱스를 다루는 방식이 다르니 참고할 때 주의. 일봉으로는 의미가 없다.
 
 **`max_drawdown`과 `calmar_ratio`는 `capital` 인자를 요구한다.** `equity_curve`는 자본이 아니라 0에서 시작하는 누적 손익이라, 예전처럼 `running_max`로 나누면 분모가 0을 지나가며 `-inf`가 나왔다. 지금은 투입원금(`result.max_book_size`) 대비로 계산한다 — `result.returns`와 분모가 같아서 샤프와 기준이 맞는다. 호출할 때 `max_drawdown(result.equity_curve, result.max_book_size)` 형태로 넘겨라.
+
+## WorldQuant 정식 알파 (`strategies/formulaic/`)
+
+출처: Zura Kakushadze, 「101 Formulaic Alphas」(2016, arXiv:1601.00991). Appendix A의 수식은 WorldQuant LLC의 명시적 허가로 공개된 것이고 저작권은 WorldQuant LLC에 있다.
+
+**101개 중 14개만 이 엔진으로 옮길 수 있다.** WorldQuant의 알파는 '한 종목의 매매 규칙'이 아니라 '2000종목 달러중립 롱숏 포트폴리오의 가중치'다. 수식에 `rank(x)`(그날 전 종목 중 몇 등), `indneutralize(x, g)`(같은 섹터 평균 차감), `scale(x, a)`, `adv{d}`, `cap`이 들어가면 종목 하나만 보고는 계산 자체가 불가능하다. 87개가 이 중 하나 이상을 쓴다. 나머지 87개를 하려면 엔진을 종목별 루프에서 '날짜 × 종목 매트릭스'로 바꾸고 공매도 경로를 넣어야 한다.
+
+**횡단면 rank를 시계열 rank로 갈음한다.** `FormulaicAlpha`가 연속 알파값을 `rolling(window).rank(pct=True)`로 자기 과거 분포의 백분위로 바꾸고, 진입/청산 문턱을 따로 둬(히스테리시스) `{-1,0,1}`을 만든다. 문턱을 하나로 두면 경계에서 신호가 떨며 왕복비용만 나간다. 알파값의 절대 수준이 가격 단위에 의존해 종목 간 비교가 안 되므로 이 정규화 없이는 임계값 하나를 전 종목에 걸 수 없다.
+
+**연산자는 필요한 것만 있다** (`formulaic/base.py`: `delta`, `correlation`, `ts_rank`, `ts_max`). 나머지(`delay`, `ts_min`, `ts_argmax`, `decay_linear`, `signedpower`)는 전부 rolling 한 줄이니 필요해질 때 추가하라. `ts_rank`는 `pct=True`로 [0,1]을 낸다 — 논문 알파들이 `(1 - Ts_Rank(...))` 형태로 쓰는 걸 보면 원본도 그 스케일을 전제한다.
+
+### 검증 결과 (코스피 대형주 43종목 **일봉**, 1975~2026, train ~2014 / test 2015~)
+
+| 알파 | 수식의 뜻 | train 순알파 | test 순알파 | 판정 |
+|---|---|---|---|---|
+| #6 | `-corr(open, volume, 10)` | +3.12bp/봉 | **+0.90bp/봉** (t=1.5) | 유일한 생존, 약함 |
+| #12 | `sign(Δvolume) × -Δclose` | +3.35 | −0.34 (초과 +10.2, t=3.6) | 예측력은 살아남고 비용에 죽음 |
+| #101 | `(close-open)/(high-low)` | +4.83 (초과 t=**11.8**) | **−21.56** (초과 t=**−5.8**) | 부호 역전 |
+| #35 | 3중 ts_rank 곱 | −5.28 | −3.83 | 부호가 반대 (train 18개 조합 전부 음수) |
+| #26 | ts_rank 중첩 상관 | 진입 69회 | 표본 없음 | 신호가 안 나옴 |
+
+**일봉에서는 '거래당 수익'으로 재면 안 된다.** 오래 들고 있는 전략이 시장 상승을 그대로 먹어 무조건 좋아 보인다(Alpha#26은 거래당 +4193bp인데 보유가 340봉이다). 노출을 상쇄하려면 시간 단위로 나눠라 — **보유 중 봉당 수익 − 미보유 봉당 수익**이 이 리포의 일봉 판정 기준이고, 비용은 `23bp × 진입횟수 / 보유봉수`로 봉당으로 환산해 뺀다.
+
+**Alpha#101이 이 리포 최고의 교훈이다.** (아래 train/test 숫자는 레짐 오염이 있다 — microstructure 절의 대조군 이야기를 같이 읽어라.) in-sample t=+11.8로 여기서 본 어떤 신호보다 강했고, out-of-sample에서 t=−5.8로 부호까지 뒤집혔다. t가 크다는 것은 지속성을 전혀 보장하지 않는다.
+
+**회전율과 엣지는 맞바꿀 수 없다.** #101·#12는 초과수익이 10~16bp/봉으로 크지만 평균 보유가 2봉이라 왕복 23bp가 봉당 11bp로 얹힌다. 히스테리시스를 넓혀 보유를 10봉으로 늘리면 비용은 2.3bp로 떨어지지만 초과수익이 함께 사라진다(#101은 −2.9bp로 음전). 엣지가 1~2봉짜리면 비용을 회피할 방법이 없다. 논문이 명시한 대로 원본은 2000종목 포트폴리오 안에서 반대 주문을 상계해("automatic internal crossing of trades") 비용을 아낀다 — 그 구조가 없으면 이 알파들은 성립하지 않는다.
+
+## 시장미시구조 (`strategies/microstructure/`)
+
+Citadel은 수식을 하나도 공개한 적이 없다(WorldQuant와 다른 점이다). 공개된 것은 사업 구조뿐이다 — Citadel Securities는 미국 주식 거래량의 약 25%를 체결하는 마켓메이커로 호가차·PFOF·리베이트로 벌고 방향성 순노출을 0에 가깝게 유지하며, 핵심 난제는 역선택이다. Citadel LLC는 팟 구조의 멀티스트래티지이고 주식 팟 대부분이 순노출 -20%~+20%의 시장중립이다.
+
+**둘 다 이 엔진과 구조가 맞지 않는다.** 마켓메이킹은 방향성 베팅이 아니라 양쪽 호가를 걸고 스프레드를 먹는 일이라 호가창·큐 포지션·마이크로초 지연이 필요하고, 시장중립은 공매도가 필요하다. 그래서 이 패키지는 **'유동성 공급자가 대가를 받는 그 양을 학술 문헌의 추정량으로 재고, 단일 종목 롱으로 옮긴 것'**이다. 출처는 Citadel이 아니라 Roll(1984)·Amihud(2002)·Cont-Kukanov-Stoikov(2014)다. 파일 주석도 그렇게 적혀 있으니 'Citadel 전략'으로 인용하지 마라.
+
+**호가 이력이 없다.** `paper/feed.py`가 `orderbook:kr`을 실시간으로 받지만 브라우저로 흘려보내고 버린다 — `market_data.db`에는 `candles` 테이블 하나뿐이다. 미시구조를 제대로 하려면 그 스트림을 적재하는 것이 첫 단계이고, 그 전까지 이 패키지는 봉 모양으로 근사한 대용치일 뿐이다.
+
+### 검증 결과 (코스피 43종목 일봉, train ~2014 / test 2015~, 순알파 bp/봉)
+
+숫자 하나가 아니라 **파라미터 격자 18조합 중 몇 %가 양수인지**를 함께 본다.
+
+| 전략 | train양수 | train중앙 | test양수 | test중앙 | 판정 |
+|---|---|---|---|---|---|
+| `AmihudIlliquidity` | 83% | +0.96 | 33% | −0.72 | 레짐을 안 타는 유일한 것, 그래서 정직하게 실패 |
+| `RollSpread` | 22% | −1.29 | 100% | +6.91 | 레짐 효과 |
+| `OrderFlowImbalance` | 6% | −1.03 | 100% | +1.40 | 레짐 효과 |
+| `AdverseSelection` | 0% | −16.21 | 61% | +0.28 | train 전멸 |
+| **대조군** `RsiReversion` | **100%** | **+6.11** | **100%** | **+6.91** | 기존 전략 |
+| **대조군** `BollingerBand` | 0% | −0.37 | 100% | +2.26 | 기존 전략 |
+
+`OvernightInventory`는 분봉 전용이라 따로 쟀다(50종목 × 28일, 1,395회): 오버나잇 +21.3bp vs 같은 종목 장중 −12.9bp로 **효과는 실재하나** 왕복비용 23bp를 2bp 차이로 못 넘어 비용 후 −1.8bp다.
+
+**일봉 train/test 분할도 레짐에 오염돼 있다.** 앞서 '25년을 걸치니 시간축 분할이 진짜 OOS'라고 적었는데 그건 과신이었다. 2015년 이후 한국 대형주가 평균회귀적으로 변해서, 평균회귀 성격을 띤 것은 새것이든 헌것이든 전부 test에서 좋아진다 — 아무것도 안 한 `BollingerBand`조차 −0.37에서 +2.26으로 뒤집힌다. **그래서 train/test 숫자만 보지 말고 반드시 기존 전략을 대조군으로 같이 돌려라.** 이 패키지에서 test가 가장 좋은 `RollSpread`(+6.91)는 원래 있던 `RsiReversion`(+6.91)과 같은 값이고, 그쪽은 train에서도 양수다. 새로 얻은 것이 없다는 뜻이다.
+
+**`rolling`의 `min_periods`를 반드시 지정하라.** pandas는 `min_periods` 기본값이 `window`라, 창 안에 NaN이 하나만 있어도 결과가 통째로 NaN이다. 점수가 드문드문 정의되는 전략(`RollSpread`는 정의 비율이 44%다 — Roll 추정량은 공분산이 양수면 정의되지 않고 그게 정상이다)은 이러면 신호가 **하나도** 안 나는데, 예외가 아니라 '거래 0회'로 조용히 끝나서 알아채기 어렵다. `Alpha#026`이 실제로 이 함정에 빠져 '신호가 안 나오는 알파'로 잘못 판정됐다가, 고치고 나니 진입이 69회에서 6,256회로 늘고 판정이 'OOS 실패'로 바뀌었다. **신호가 안 나오는 것과 신호가 나쁜 것은 다른 결론이고, 전자는 대개 버그다.** `strategies/tests/test_microstructure.py`의 `test_signals_actually_fire`가 이걸 잡는다.
+
+**점수형 전략의 공통 뼈대는 `strategies/score_base.py`의 `PercentileScoreStrategy`다.** 연속 점수를 자기 과거 백분위로 바꿔 문턱을 거는 기계 부분이고, `formulaic`과 `microstructure`가 함께 쓴다. 점수의 절대 수준이 가격·거래량 단위에 의존해 종목 간 비교가 안 되기 때문에 이 정규화 없이는 임계값 하나를 전 종목에 걸 수 없다.
 
 ## 결과 캐시 (`backtest/results.py`)
 
@@ -105,6 +183,8 @@ backtest.optimize.grid_search(...)             →  위 4단계를 파라미터 
 **`backtest/run.py`와 숫자가 완전히 같지는 않다.** 전 구간을 끊지 않고 이어서 돌리므로 train에서 들고 있던 포지션이 test 시작 시점에 넘어온다. `backtest/run.py`는 test 슬라이스를 무포지션에서 시작한다.
 
 **캐시 무효화**: 행마다 전략 소스 + `indicators.py` + `base.py` + `backtest/engine.py`의 mtime 최댓값(`fp`)을 박아 둔다. 코드를 고치면 그 전략의 행만 버려지고 다시 계산된다. 스키마를 바꿀 때는 `SCHEMA_VERSION`을 올리면 테이블이 통째로 재생성된다.
+
+**`backtest/results.py`를 일봉으로 돌리지 마라.** 캐시 단위가 '거래일'이라 1분봉에서는 행 하나가 390봉을 요약하지만 일봉에서는 행 하나가 봉 하나다. 현재 1분봉 전량이 68,678행에 151MB인데, 일봉(49종목 × 6,377일 × 51전략)이면 약 1,600만 행 — 230배다. 일봉 검증은 `backtest/run.py --interval 1d`나 별도 스크립트로 하고, results.py는 분봉 전용으로 둬라.
 
 출력은 `results.db`(기계용, gitignore 대상), `results/report.md`(전략 순위 + 상위 5개 상세), `results/detail.csv`(전 조합). 실측: 2종목 × 41전략 콜드 37초 → 웜 6초. 전량(41전략 × 50종목 = 2050조합) 콜드 약 17분 → 웜 238초.
 
@@ -141,12 +221,14 @@ backtest.optimize.grid_search(...)             →  위 4단계를 파라미터 
 
 테스트: `python paper/tests/test_broker.py` (체결 엔진), `tests/test_ticks.py`, `tests/test_toss.py`, `tests/test_feed.py`. 프레임워크 없이 assert 기반이다.
 
+전략 쪽 테스트도 같은 형식이다: `python strategies/tests/test_session_alpha.py` (세션 기반 전략 5개의 lookahead·오버나잇 검사), `python strategies/tests/test_formulaic.py` (WorldQuant 알파의 연산자 손계산 대조 + lookahead·워밍업 검사), `python strategies/tests/test_microstructure.py` (미시구조 추정량 손계산 대조 + 신호가 실제로 나는지).
+
 ## 데이터
 
-`market_data.db` (SQLite, 리포에 커밋되어 있음, 14MB). 테이블 `candles`, PK `(ticker, timeframe, timestamp)` — `INSERT OR IGNORE` 증분 수집이라 재실행해도 안전하다. `timestamp`는 TEXT로 저장되고 `load_candles`가 읽을 때 datetime으로 파싱한다.
+`market_data.db` (SQLite, gitignore 대상, 현재 245MB — 코스피50 전 종목 1분봉). 테이블 `candles`, PK `(ticker, timeframe, timestamp)` — `INSERT OR IGNORE` 증분 수집이라 재실행해도 안전하다. **1분봉은 코스피50 전 종목이 있지만 종목당 거래일이 28일뿐이고, 일봉(49종목)은 1975년까지 올라간다.** 전략 검증의 검정력은 거의 전부 일봉에서 나온다 — `python -m data.candles --kospi50 --interval 1d`는 1분봉 수집과 달리 몇 분이면 끝난다. `timestamp`는 TEXT로 저장되고 `load_candles`가 읽을 때 datetime으로 파싱한다.
 
 `data/auth.py`가 `.env`의 `TOSS_CLIENT_ID` / `TOSS_CLIENT_SECRET`으로 토큰을 자동 발급·캐시한다 (만료 60초 전 갱신). 토큰 401이 아니라 **IP 미등록**으로 실패하는 경우가 많다.
 
 ## 리포 위생
 
-`.gitignore`가 `.env`와 `__pycache__/`를 막는다. 14MB `market_data.db`는 여전히 커밋되어 있다.
+`.gitignore`가 `.env`, `__pycache__/`, 그리고 `market_data.db`·`results.db`·`paper.db`·`results/`·`graph/` 같은 생성물을 전부 막는다. 데이터는 커밋하지 않으므로 새 환경에서는 `python -m data.candles --kospi50 --interval 1m`으로 다시 받아야 한다 — **토스 API가 429를 자주 던지고 `update_multiple`에 재시도가 없어서 한 번에 다 못 받는다.** 실측으로 50종목 중 17종목이 rate limit으로 실패했다. 수집이 증분이라 그냥 실패한 종목만 다시 돌리면 되고, 미수집 종목은 `KOSPI50`과 DB를 비교해 뽑으면 된다.

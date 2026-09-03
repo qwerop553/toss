@@ -138,17 +138,27 @@ def _fingerprint(name: str) -> float:
     """
     전략 소스가 바뀌었는데 옛날 숫자를 계속 보는 사고를 막는 지문.
 
-    전략 자기 파일과, 거의 모든 전략이 물고 있는 공용 모듈(지표·베이스·엔진)의
+    전략 자기 파일과, 거의 모든 전략이 물고 있는 공용 모듈(지표·엔진)의
     수정 시각 중 가장 최근 것을 쓴다. 내용 해시가 아니라 mtime인 이유는 싸기
     때문이다 — 내용이 같은데 저장만 다시 한 경우 헛되이 재계산하지만, 그 대가는
     '고친 코드로 옛날 결과를 보는 것'보다 압도적으로 싸다.
+
+    베이스 클래스는 이름을 박지 않고 MRO를 타고 올라가며 모은다. strategies/base.py를
+    하드코딩해 두면 중간 베이스(formulaic/base.py처럼 신호 생성을 통째로 들고 있는
+    파일)를 고쳐도 지문이 그대로라 캐시가 살아남는다 — 고친 코드로 옛날 숫자를 보게
+    되는 바로 그 사고다. MRO를 쓰면 앞으로 어떤 중간 베이스가 생겨도 자동으로 걸린다.
     """
     files = [
-        inspect.getfile(strategies.REGISTRY[name]),
         os.path.join(ROOT, "strategies", "indicators.py"),
-        os.path.join(ROOT, "strategies", "base.py"),
         os.path.join(BASE, "engine.py"),
     ]
+    for klass in strategies.REGISTRY[name].__mro__:
+        try:
+            path = inspect.getfile(klass)
+        except TypeError:
+            continue          # object 같은 내장 타입은 소스 파일이 없다
+        if path.startswith(ROOT):   # 리포 밖(abc 등 표준 라이브러리)은 볼 필요 없다
+            files.append(path)
     # 없는 파일을 조용히 건너뛰면 안 된다. 경로가 틀어진 채로도 지문이 계산되어
     # 코드를 고쳐도 캐시가 영영 무효화되지 않고, 옛날 결과를 새 결과로 착각하게
     # 된다. 파일이 옮겨지면 여기서 바로 터지는 편이 낫다.

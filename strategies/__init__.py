@@ -35,7 +35,11 @@ for module_info in pkgutil.walk_packages([str(_package_dir)], prefix=f"{__name__
 
     for name, obj in inspect.getmembers(module, inspect.isclass):
         # 방금 import한 모듈에 정의되어 있거나 해당 import한 모듈에서 import한 모듈의 클래스만 가져온다.
-        if issubclass(obj, Strategy) and obj is not Strategy:
+        # isabstract로 거르는 이유: 전략 모듈이 자기 베이스 클래스를 import하면 그 베이스도
+        # 여기 걸려서 전략으로 등록되고, --all이 그걸 인스턴스화하다 터진다. Strategy는
+        # obj is not Strategy로 이미 빠지지만 중간 베이스(formulaic.base.FormulaicAlpha)는
+        # 그 조건에 안 걸린다. @abstractmethod가 있는 클래스는 전략이 아니라 뼈대다.
+        if issubclass(obj, Strategy) and obj is not Strategy and not inspect.isabstract(obj):
             # 해당 클래스가 Strategy의 클래스라면 가져와서
             globals()[name] = obj
             # 딕셔너리 형태의 전역 네임스페이스에 저장한다.
