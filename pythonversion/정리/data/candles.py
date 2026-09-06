@@ -1,23 +1,22 @@
 """
-토스 서버에서 원하는 종목의 분봉을 받아 DB에 쌓는다.
-
-핵심은 update_candles(ticker) — 증분 수집이라 재실행해도 안전하다.
-토큰은 data/auth.py가 처리한다.
+토스증권에 연결하여 종목 데이터를 DB에 쌓는다.
 
     python -m data.candles 005930 000660 --interval 1m
 """
 
-DEFAULT_DB_PATH = "market_data.db"
-API_BASE = "https://openapi.tossinvest.com/api/v1/candles"
-
 import sys
 import sqlite3
+
+from pythonversion.정리.data.Server import DEFAULT_DB_PATH   
+
+API_BASE = "https://openapi.tossinvest.com/api/v1/candles"
+
 from typing import Optional
 
 import pandas as pd
 import requests
 
-from data.auth import get_access_token
+from pythonversion.정리.data.auth import get_access_token
 
 def update_candles(ticker: str, interval: str = "1m",
                     adjusted: bool = True, db_path: str = DEFAULT_DB_PATH,
@@ -218,7 +217,7 @@ def _main():
 
     tickers = list(args.tickers)
     if args.kospi50:
-        from data.tickers import KOSPI50
+        from pythonversion.정리.data.tickers import KOSPI50
         # 인자로 준 종목과 합치되 순서를 유지하고 중복은 제거한다
         tickers = list(dict.fromkeys(tickers + list(KOSPI50)))
     if not tickers:

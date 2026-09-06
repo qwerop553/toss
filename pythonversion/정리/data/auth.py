@@ -15,8 +15,8 @@ import requests
 from dotenv import load_dotenv
 
 TOKEN_URL = "https://openapi.tossinvest.com/oauth2/token"
-
-load_dotenv()  # .env를 환경변수로 로드 (모듈 임포트 시 1회 실행)
+env_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+load_dotenv(dotenv_path=env_path)  # .env를 환경변수로 로드 (모듈 임포트 시 1회 실행)
 
 # 모듈 내부에서만 쓰는 토큰 캐시. 밖에서 직접 건드리지 말 것.
 _access_token: Optional[str] = None
@@ -39,7 +39,7 @@ def _issue_token() -> tuple[str, int]:
     client_id = os.getenv("TOSS_CLIENT_ID")
     client_secret = os.getenv("TOSS_CLIENT_SECRET")
     if not client_id or not client_secret:
-        raise RuntimeError("TOSS_CLIENT_ID / TOSS_CLIENT_SECRET 환경변수가 없음. .env 확인 바람")
+        raise RuntimeError("client_key, secret_key 값을 불러올 수 없음")
 
     response = requests.post(
         url=TOKEN_URL,
@@ -52,7 +52,7 @@ def _issue_token() -> tuple[str, int]:
         timeout=10,
     )
     if response.status_code != 200:
-        raise RuntimeError(f"access_token 획득 실패 [{response.status_code}]. IP 등록 확인 바람")
+        raise RuntimeError(f"토큰 발행 실패. IP 등록 확인 필요[{response.status_code}]")
 
     body = response.json()
     access_token = body.get("access_token")

@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>호가 조회</title>
+</head>
+<body>
+
+<h1>호가 조회</h1>
+
+<form method="get" action="/quote">
+    <input type="text" name="code" th:value="${code}" placeholder="005930" required>
+    <button type="submit">조회</button>
+</form>
+
+<p th:if="${error}" th:text="${error}"></p>
+
+<table th:if="${quote}">
+    <tr>
+        <td>최우선 매도호가</td>
+        <td th:text="${#numbers.formatInteger(quote.bestAsk, 3, 'COMMA')}"></td>
+        <td>(사면 이 가격)</td>
+    </tr>
+    <tr>
+        <td>최우선 매수호가</td>
+        <td th:text="${#numbers.formatInteger(quote.bestBid, 3, 'COMMA')}"></td>
+        <td>(팔면 이 가격)</td>
+    </tr>
+</table>
+
+</body>
+</html>

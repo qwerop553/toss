@@ -14,14 +14,14 @@ import os
 
 import pandas as pd
 
-from data import candles
+from pythonversion.정리.data import candles
 import strategies
-from backtest.engine import run_backtest
-from backtest.grids import GRIDS, VALID
-from backtest.metrics import sharpe_ratio, max_drawdown, trade_stats
-from backtest.optimize import grid_search
-from backtest.report import print_summary, plot_backtest, to_daily_summary
-from backtest.validation import walk_forward_split
+from pythonversion.정리.backtest.engine import run_backtest
+from pythonversion.정리.backtest.grids import GRIDS, VALID
+from pythonversion.정리.backtest.metrics import sharpe_ratio, max_drawdown, trade_stats
+from pythonversion.정리.backtest.optimize import grid_search
+from pythonversion.정리.backtest.report import print_summary, plot_backtest, to_daily_summary
+from pythonversion.정리.backtest.validation import walk_forward_split
 
 # 산출물은 backtest/ 안이 아니라 리포 루트에 모은다 (results.py의 results/와 같은 위치).
 GRAPH_DIR = os.path.join(

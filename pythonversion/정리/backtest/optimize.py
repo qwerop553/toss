@@ -6,8 +6,8 @@ from itertools import product
 from typing import Callable, Iterable
 import pandas as pd
 
-from backtest.engine import run_backtest
-from backtest.metrics import sharpe_ratio, sortino_ratio, max_drawdown, calmar_ratio
+from pythonversion.정리.backtest.engine import run_backtest
+from pythonversion.정리.backtest.metrics import sharpe_ratio, sortino_ratio, max_drawdown, calmar_ratio
 
 
 @dataclass

@@ -17,16 +17,13 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from data import candles
+from pythonversion.정리.data import candles
 from paper import toss
 from paper.broker import Book, Broker, OrderRejected
 from paper.feed import MAX_SYMBOLS, Feed
 
 BASE = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(os.path.dirname(BASE), "paper.db")
-# data.candles의 기본값("market_data.db")은 상대경로다. 서버를 다른 작업 디렉터리에서
-# 띄우면 기존 DB를 못 찾고 빈 DB를 새로 만들어 버리므로 절대경로로 고정한다.
-MARKET_DB_PATH = os.path.join(os.path.dirname(BASE), "market_data.db")
 
 app = FastAPI(title="모의투자")
 broker = Broker(DB_PATH)
@@ -324,7 +321,7 @@ def api_quote(symbol: str):
 def api_candles(symbol: str, interval: str = "1m", response: Response = None):
     """차트용 분봉. market_data.db를 최신까지 당긴 뒤 읽는다(증분이라 안전하다)."""
     try:
-        candles.update_candles(symbol, interval, db_path=MARKET_DB_PATH)
+        candles.update_candles(symbol, interval)
     except Exception as exc:
         # on_status를 부르면 안 된다 — 그건 실시간 시세 웹소켓의 상태고, 캔들
         # 수집은 별개의 REST 호출이다. 여기서 feed 상태를 error로 덮으면 화면은
@@ -337,7 +334,7 @@ def api_candles(symbol: str, interval: str = "1m", response: Response = None):
         print(f"[api_candles] 캔들 수집 실패 ({symbol}/{interval}): {exc}")
         if response is not None:
             response.headers["X-Candles-Error"] = "fetch-failed"
-    df = candles.load_candles(symbol, interval, db_path=MARKET_DB_PATH)
+    df = candles.load_candles(symbol, interval)
     if df.empty:
         return []
     df = df.tail(500)
