@@ -1,5 +1,6 @@
 package com.example.demo.quote
 
+import com.example.demo.auth.TossAuthClient
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 import org.springframework.web.client.RestClient
@@ -15,14 +16,18 @@ private const val QUOTE_PATH = "/orderbook"
 @Component
 class QuoteClient(
     @Value("\${toss.base-url}") baseUrl: String,
-    @Value("\${toss.token}") private val token: String,
+    private val tossAuthClient: TossAuthClient,
 ) {
     private val client = RestClient.builder().baseUrl(baseUrl).build()
 
     fun quote(stockCode: String): Quote {
+        // 토큰을 생성자에서 한 번만 받지 않고 호출마다 tossAuthClient에 다시
+        // 묻는 이유: 토큰은 만료되고 갱신된다. 여기서 매번 물어보면 캐시
+        // 재사용/재발급 판단은 TossAuthClient 한 곳에서만 하고, 이 클래스는
+        // "지금 유효한 토큰이 뭔지"만 신경 쓰면 된다.
         val body = client.get()
             .uri("$QUOTE_PATH?symbol={symbol}", stockCode)
-            .header("Authorization", "Bearer $token")
+            .header("Authorization", "Bearer ${tossAuthClient.accessToken()}")
             .retrieve()
             .body<String>()
             ?: error("호가 응답이 비어 있다")

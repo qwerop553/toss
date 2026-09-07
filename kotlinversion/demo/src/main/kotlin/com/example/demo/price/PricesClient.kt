@@ -1,5 +1,6 @@
 package com.example.demo.price
 
+import com.example.demo.auth.TossAuthClient
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 import org.springframework.web.client.RestClient
@@ -15,14 +16,15 @@ private const val PRICES_PATH = "/prices"
 @Component
 class PricesClient(
     @Value("\${toss.base-url}") baseUrl: String,
-    @Value("\${toss.token}") private val token: String,
+    private val tossAuthClient: TossAuthClient,
 ) {
     private val client = RestClient.builder().baseUrl(baseUrl).build()
 
     fun prices(stockCodes: String): List<Long> {
+        // QuoteClient와 같은 이유로 매 호출마다 최신 토큰을 다시 물어본다.
         val body = client.get()
             .uri("$PRICES_PATH?symbols={symbols}", stockCodes)
-            .header("Authorization", "Bearer $token")
+            .header("Authorization", "Bearer ${tossAuthClient.accessToken()}")
             .retrieve()
             .body<String>()
             ?: error("현재가 응답이 비어 있다")
