@@ -1,5 +1,6 @@
 package com.example.demo.feed
 
+import org.springframework.stereotype.Component
 import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.WebSocket
@@ -25,7 +26,6 @@ private const val BACKOFF_MAX_SECONDS = 30L
 // 하나가 감당할 수 있는 한도다. 이 값을 넘겨 선언하면 토스 서버가 어떻게
 // 반응할지 확인 안 됐으므로, 넘기기 전에 여기서 먼저 막는다.
 private const val MAX_SYMBOLS = 50
-
 /**
  * 토스 웹소켓 업스트림. 연결을 하나만 물고 콜백으로 흘려보낸다.
  *
@@ -43,6 +43,7 @@ private const val MAX_SYMBOLS = 50
  *   애초에 없다 — 이게 이 클래스가 브라우저 쪽과 코드를 공유할 수 없는
  *   근본 이유이기도 하다.
  */
+
 class TossFeedClient(
     // 토큰을 문자열 하나로 안 받고 함수로 받는 이유: 토큰은 만료되고
     // 갱신된다(파이썬 버전의 get_access_token()과 동일). connect()가
@@ -104,6 +105,12 @@ class TossFeedClient(
     private val seq = AtomicLong(0)
 
     fun start() = connect()
+
+    open fun shutdown(){
+        pingTask?.cancel(false)
+        scheduler.shutdownNow()
+        webSocket?.abort()
+    }
 
     /**
      * 관심종목이 바뀌면 전체를 다시 선언한다.
@@ -265,5 +272,6 @@ class TossFeedClient(
             onStatus("reconnecting", error.toString())
             scheduleReconnect()
         }
+
     }
 }

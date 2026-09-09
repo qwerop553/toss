@@ -38,3 +38,6 @@ out/
 
 ### Kotlin ###
 .kotlin
+
+# 모의투자 상태 DB (실행 시 생성, 커밋 안 함)
+data/

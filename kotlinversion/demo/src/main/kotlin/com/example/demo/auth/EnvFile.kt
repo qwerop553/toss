@@ -17,10 +17,10 @@ private const val MAX_PARENT_LEVELS = 6
  *   포맷 자체는 모른다. 이 저장소의 .env는 pythonversion과 kotlinversion이
  *   함께 쓰는 위치(저장소 최상위)에 있고, 시크릿(TOSS_CLIENT_ID/
  *   TOSS_CLIENT_SECRET)을 거기 하나에만 두는 이유는 그 파일 하나만
- *   .gitignore에 걸면 두 버전 다 안전해지기 때문이다(실제로 루트
- *   .gitignore에 이미 .env가 걸려 있다).
+ *   .gitignore에 걸면 두 버전 다 안전해지기 때문이다
+ *   (실제로 루트 .gitignore에 이미 .env가 걸려 있다).
  *
- * 왜 별도 라이브러리(spring-dotenv 등)를 안 쓰는가:
+ *   왜 별도 라이브러리(spring-dotenv 등)를 안 쓰는가:
  *   포맷이 "KEY=VALUE" 줄 몇 개뿐이라 파싱에 라이브러리가 필요할 정도로
  *   복잡하지 않다. 의존성 하나를 새로 끌어오는 비용이 이 몇 줄짜리 파싱
  *   로직보다 크다.
@@ -36,6 +36,8 @@ object EnvFile {
      * 위치가 달라질 수 있다. 위로 몇 단계 찾아 올라가는 쪽이 실행 방식이
      * 바뀌어도 깨지지 않는다.
      */
+
+    // 자바의 File은 파일이 아니라 파일의 경로를 표현하는 객채이다.
     fun load(): Map<String, String> {
         var dir: File? = File(".").canonicalFile
         repeat(MAX_PARENT_LEVELS) {
