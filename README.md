@@ -2,8 +2,8 @@
 
 토스증권 OpenAPI로 만든 KOSPI 50 종목 모의투자사이트**
 
-![모의투자 매매 화면1](pythonversion/docs/screenshots/trading.jpg)
-![모의투자 매매 화면2](pythonversion/docs/screenshots/orderbook.jpg)
+![모의투자 매매 화면1](research/docs/screenshots/trading.jpg)
+![모의투자 매매 화면2](research/docs/screenshots/orderbook.jpg)
 
 실제 화면
 

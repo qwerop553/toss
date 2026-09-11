@@ -17,7 +17,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from pythonversion.정리.data import candles
+from data import candles
 from paper import toss
 from paper.broker import Book, Broker, OrderRejected
 from paper.feed import MAX_SYMBOLS, Feed

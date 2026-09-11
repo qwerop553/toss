@@ -3,8 +3,8 @@ package com.example.demo.auth
 import java.io.File
 
 // 저장소 최상위(.env가 있는 곳)까지 몇 단계나 거슬러 올라갈지의 상한.
-// kotlinversion/demo에서 저장소 루트까지는 2단계(demo -> kotlinversion -> toss)
-// 지만, Gradle/IntelliJ가 앱을 어디서 실행하느냐에 따라 시작 위치가 달라질
+// server/에서 저장소 루트까지는 1단계(server -> toss)지만,
+// Gradle/IntelliJ가 앱을 어디서 실행하느냐에 따라 시작 위치가 달라질
 // 수 있어 여유 있게 6단계까지 찾아본다. 못 찾으면 무한 루프 대신 확실히
 // 실패하도록 상한을 둔다.
 private const val MAX_PARENT_LEVELS = 6
@@ -14,7 +14,7 @@ private const val MAX_PARENT_LEVELS = 6
  *
  * 왜 필요한가:
  *   Spring은 application.properties나 OS 환경변수는 읽어도 .env 파일
- *   포맷 자체는 모른다. 이 저장소의 .env는 pythonversion과 kotlinversion이
+ *   포맷 자체는 모른다. 이 저장소의 .env는 research(파이썬)와 server(Kotlin)가
  *   함께 쓰는 위치(저장소 최상위)에 있고, 시크릿(TOSS_CLIENT_ID/
  *   TOSS_CLIENT_SECRET)을 거기 하나에만 두는 이유는 그 파일 하나만
  *   .gitignore에 걸면 두 버전 다 안전해지기 때문이다
@@ -31,7 +31,7 @@ object EnvFile {
      * 현재 작업 디렉토리에서 시작해 위로 올라가며 .env를 찾아 파싱한다.
      *
      * 작업 디렉토리 기준 고정 상대경로("../../.env")를 하드코딩하지 않는
-     * 이유: 앱을 저장소 루트에서 실행하는지, kotlinversion/demo 모듈
+     * 이유: 앱을 저장소 루트에서 실행하는지, server/ 모듈
      * 디렉토리에서 실행하는지(Gradle/IntelliJ의 기본값)에 따라 실제 시작
      * 위치가 달라질 수 있다. 위로 몇 단계 찾아 올라가는 쪽이 실행 방식이
      * 바뀌어도 깨지지 않는다.

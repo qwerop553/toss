@@ -5,8 +5,8 @@ import pandas as pd
 # BacktestResult를 실제로 임포트한다. 지금까지는 임포트 없이 타입 힌트로만
 # 써 왔는데, Python 3.14의 지연 annotation 평가(PEP 649) 덕에 우연히 동작했을
 # 뿐이라 하위 버전에서는 NameError가 난다.
-from pythonversion.정리.backtest.engine import BacktestResult
-from pythonversion.정리.backtest.metrics import sharpe_ratio, sortino_ratio, max_drawdown, calmar_ratio, trade_stats
+from backtest.engine import BacktestResult
+from backtest.metrics import sharpe_ratio, sortino_ratio, max_drawdown, calmar_ratio, trade_stats
 
 def print_summary(result: BacktestResult) -> None:
     """

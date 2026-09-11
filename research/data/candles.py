@@ -4,10 +4,26 @@
     python -m data.candles 005930 000660 --interval 1m
 """
 
+import os
 import sys
 import sqlite3
 
-from pythonversion.정리.data.Server import DEFAULT_DB_PATH   
+# market_data.db는 저장소 최상위(toss/)에 있다. kotlin 쪽과 공유하는 위치라
+# 파이썬 패키지 안이 아니라 한 단계 더 바깥이다.
+#
+# 경로를 이름이 아니라 "몇 단계 위"로 세는 이유: 상위 디렉토리 이름이
+# 바뀌어도(실제로 한 번 바뀌었다) 이 계산은 그대로 맞는다. 반대로
+# "pythonversion"처럼 이름을 박아 두면 디렉토리를 옮기는 순간 조용히
+# 엉뚱한 곳을 가리키고, DB가 없으면 sqlite가 빈 파일을 새로 만들어 버려서
+# "데이터가 사라졌다"처럼 보인다.
+#
+# 이 상수는 원래 Server.py에 있었는데 그 파일에 실제로 정의된 적이 없어서
+# (클래스 안의 _DB_PATH만 있었다) import 자체가 깨져 있었다. 캔들 수집이
+# 통째로 안 돌던 원인이라 여기로 옮겨 왔다 — 쓰는 곳이 여기뿐이다.
+DEFAULT_DB_PATH = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+    "market_data.db",
+)
 
 API_BASE = "https://openapi.tossinvest.com/api/v1/candles"
 
@@ -16,7 +32,7 @@ from typing import Optional
 import pandas as pd
 import requests
 
-from pythonversion.정리.data.auth import get_access_token
+from data.auth import get_access_token
 
 def update_candles(ticker: str, interval: str = "1m",
                     adjusted: bool = True, db_path: str = DEFAULT_DB_PATH,
@@ -217,7 +233,7 @@ def _main():
 
     tickers = list(args.tickers)
     if args.kospi50:
-        from pythonversion.정리.data.tickers import KOSPI50
+        from data.tickers import KOSPI50
         # 인자로 준 종목과 합치되 순서를 유지하고 중복은 제거한다
         tickers = list(dict.fromkeys(tickers + list(KOSPI50)))
     if not tickers:

@@ -8,17 +8,27 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ```
 toss/
-├── paper/          모의투자 웹앱 (FastAPI + 체결 시뮬레이션). 프로젝트의 중심
-│   ├── app.py broker.py feed.py toss.py ticks.py
-│   ├── static/index.html
-│   └── tests/                 assert 기반, 네트워크 없이 돈다
-├── backtest/       백테스팅 하네스
-│   ├── engine.py metrics.py optimize.py validation.py report.py grids.py
-│   └── run.py results.py      CLI 진입점
-├── strategies/     전략 56개 + indicators.py (paper·backtest가 공유)
-├── data/           candles.py(수집·조회) auth.py(토큰) tickers.py (양쪽 공유)
-└── docs/
+├── server/         Kotlin(Spring) 실시간 게이트웨이. 별도 CLAUDE.md 없음
+├── market_data.db  캔들 저장소 (gitignore, 여기서 한 단계 위)
+└── research/       ← 이 문서가 다루는 범위
+    ├── paper/          모의투자 웹앱 (FastAPI + 체결 시뮬레이션). 프로젝트의 중심
+    │   ├── app.py broker.py feed.py toss.py ticks.py
+    │   ├── signal_runner.py   전략 신호를 server로 쏘는 러너 (아래 절)
+    │   ├── static/index.html
+    │   └── tests/             assert 기반, 네트워크 없이 돈다
+    ├── backtest/       백테스팅 하네스
+    │   ├── engine.py metrics.py optimize.py validation.py report.py grids.py
+    │   └── run.py results.py  CLI 진입점
+    ├── strategies/     전략 56개 + indicators.py (paper·backtest가 공유)
+    ├── data/           candles.py(수집·조회) auth.py(토큰) tickers.py (양쪽 공유)
+    └── docs/
 ```
+
+**모든 명령은 `research/`에서 실행한다.** 예전에는 `backtest/`와 `data/`가
+`정리/`라는 폴더 안에 있었고 import가 `from pythonversion.정리.data import ...`
+처럼 저장소 최상위를 루트로 가정했는데, 나머지 코드는 전부 이 디렉토리를
+루트로 써서 어느 위치에서도 실행되지 않았다. 지금은 위 트리대로 평평하고,
+import도 `from data import candles` 처럼 이 디렉토리 기준이다.
 
 `strategies/`와 `data/`가 두 패키지 바깥에 있는 이유: 전략을 골라 자동매매를 붙일 때 `paper/`가 `backtest/`를 거치지 않고 전략을 직접 import할 수 있어야 한다. **`paper/`는 `backtest/`를 import하지 않는다** — 이 방향을 뒤집지 마라.
 

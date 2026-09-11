@@ -55,11 +55,11 @@ from functools import lru_cache
 
 import pandas as pd
 
-from pythonversion.정리.data import candles
+from data import candles
 import strategies
-from pythonversion.정리.data import tickers
-from pythonversion.정리.backtest.engine import run_backtest
-from pythonversion.정리.backtest.metrics import trade_stats
+from data import tickers
+from backtest.engine import run_backtest
+from backtest.metrics import trade_stats
 
 BASE = os.path.dirname(os.path.abspath(__file__))   # backtest/
 ROOT = os.path.dirname(BASE)                        # 리포 루트
@@ -608,7 +608,7 @@ def selfcheck(name="PivotPointStrategy", ticker="005930", interval="1m") -> None
 
     # 접어 놓은 합계로 복원한 샤프가, 봉 시계열에서 직접 낸 샤프와 같은지 본다.
     # 캐시의 핵심 주장이 '접어도 봉 해상도가 유지된다'이므로 여기서 확인한다.
-    from pythonversion.정리.backtest.metrics import sharpe_ratio
+    from backtest.metrics import sharpe_ratio
     sig = strategies.REGISTRY[name]().generate_signals(df)
     res = run_backtest(df, sig, buy_slippage=BUY_SLIPPAGE, sell_slippage=SELL_SLIPPAGE)
     capital = summarize(full, span="full")["capital"]
