@@ -8,3 +8,11 @@ market_data.db
 
 # 백테스트 그림 출력
 graph/
+
+# IntelliJ
+.idea/
+
+# Kotlin 서버의 H2 모의투자 DB (application.properties의 jdbc:h2:file:./data/paper).
+# 맨 앞의 /는 "저장소 최상위의 data/만"이라는 뜻이다. 이게 없으면
+# pythonversion/정리/data/ 까지 무시되는데, 거기는 추적 중인 소스다.
+/data/

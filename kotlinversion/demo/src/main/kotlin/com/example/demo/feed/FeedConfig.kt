@@ -17,7 +17,16 @@ class FeedConfig {
     ): TossFeedClient {
         val feed = TossFeedClient(
             tokenProvider = tossAuthClient::accessToken,
-            onTrade = { symbol, data -> tradeService.onTradePrint(symbol, data.price, data.volume) },
+            // 체결 프린트는 두 군데로 간다. (1) 모의 체결 판정(기존 동작),
+            // (2) /ws 구독자들. 토스 업스트림 소켓이 계정당 2개뿐이라
+            // 파이썬 러너가 토스에 직접 붙을 수 없고, 대신 이 서버의 /ws를
+            // 구독해 시세를 받기 때문에 체결도 흘려줘야 한다. 순서는
+            // 체결 판정이 먼저다 — 내 주문이 체결된 결과까지 반영된 뒤에
+            // 외부가 그 프린트를 보는 게 자연스럽다.
+            onTrade = { symbol, data ->
+                tradeService.onTradePrint(symbol, data.price, data.volume)
+                priceSocketHandler.broadcast(symbol, data)
+            },
             onOrderbook = { symbol, data ->
                 orderbookStore.update(symbol, data)
                 priceSocketHandler.broadcast(symbol, data)

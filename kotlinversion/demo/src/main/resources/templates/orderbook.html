@@ -17,11 +17,22 @@
         .qty { width: 165px; color: #555; }
         .qty.ask { text-align: left; }
         .qty.bid { text-align: right; }
+        /* 시그널 배너. 색은 호가창과 같은 규칙을 그대로 쓴다 — 매수는 빨강,
+           매도는 파랑. 화면 안에서 같은 뜻에 다른 색을 쓰면 그 자체가 오독의
+           원인이 된다. 폭을 표와 맞춰 두면 배너가 떴다 사라져도 표가
+           좌우로 흔들리지 않는다. */
+        #signal-banner { width: 420px; box-sizing: border-box; margin: 10px 0; padding: 8px 10px;
+                         border-radius: 4px; font-size: 0.95em; }
+        #signal-banner.BUY { background: #fee2e2; color: #991b1b; border: 1px solid #dc2626; }
+        #signal-banner.SELL { background: #dbeafe; color: #1e40af; border: 1px solid #2563eb; }
+        #signal-banner .note { display: block; margin-top: 3px; color: #444; font-size: 0.9em; }
     </style>
 </head>
 <body>
 
 <h1>실시간 호가 — 삼성전자(005930)</h1>
+
+<div id="signal-banner" hidden></div>
 
 <table>
     <tbody id="ladder"></tbody>
@@ -37,11 +48,42 @@
 <script>
   const ws = new WebSocket(`ws://${location.host}/ws`);
 
+  // 이 소켓 하나로 여러 종류의 메시지가 섞여 온다(호가·체결·시그널). 게다가
+  // 이 화면 말고 파이썬 러너도 같은 소켓을 구독하기 때문에, 이 화면과 상관
+  // 없는 type이 앞으로 더 늘어날 수 있다. 그래서 아는 type만 처리하고
+  // 나머지는 조용히 무시한다 — 모르는 메시지에 렌더링을 시도하면(예: 체결
+  // 메시지에 asks가 없다) 그 자리에서 예외가 나고 호가 표가 멈춘다.
   ws.onmessage = (event) => {
     const msg = JSON.parse(event.data);
-    if (msg.type !== "orderbook") return;
-    render(msg.asks, msg.bids);
+    if (msg.type === "orderbook") render(msg.asks, msg.bids);
+    else if (msg.type === "signal") showSignal(msg);
+    // 체결(trade)은 파이썬 러너용이라 이 화면에선 쓰지 않는다. 호가창에
+    // 이미 같은 정보가 보이고, 초당 수십 건씩 오는 걸 화면에 흘리면
+    // 정작 중요한 시그널 배너를 가린다.
   };
+
+  // 배너는 자동으로 사라지지 않는다. 타이머로 지우면 잠깐 자리를 비운 사이
+  // 시그널이 왔다 간 걸 영영 모르게 된다. 다음 시그널이 오면 어차피
+  // 덮어쓰이므로 "가장 최근 시그널이 항상 떠 있다"가 더 유용하다.
+  function showSignal(signal) {
+    const banner = document.getElementById("signal-banner");
+    banner.className = signal.side;   // BUY/SELL이 그대로 CSS 클래스가 된다
+    const time = new Date(signal.timestamp).toLocaleTimeString("ko-KR");
+    const label = signal.side === "BUY" ? "매수" : "매도";
+
+    // innerHTML이 아니라 textContent로 채운다. note와 strategy는 파이썬
+    // 프로세스가 준 값이라 이 페이지 입장에선 외부 입력이고, 거기에 태그가
+    // 섞여 있으면 innerHTML은 그걸 실행 가능한 마크업으로 해석한다.
+    banner.textContent =
+      `${label} 시그널 · ${signal.stockCode} · ${signal.price.toLocaleString()}원 · ${signal.strategy} · ${time}`;
+    if (signal.note) {
+      const note = document.createElement("span");
+      note.className = "note";
+      note.textContent = signal.note;
+      banner.appendChild(note);
+    }
+    banner.hidden = false;
+  }
 
   function render(asks, bids) {
     // 서버가 준 배열 순서를 믿지 않고 매번 여기서 다시 정렬한다 — 설계
