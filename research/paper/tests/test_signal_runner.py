@@ -82,10 +82,23 @@ class 터지는전략:
         raise RuntimeError("지표 계산 중 터졌다")
 
 
-def new_runner(strategy=None, symbols=("005930",), history=None):
+class 항상장중:
+    """정규장 판정을 항상 참으로 만드는 가짜. 대부분의 테스트는 장 시간이
+    관심사가 아니므로 이걸 기본으로 쓴다(안 그러면 toss API를 타게 된다)."""
+    def is_open(self, now):
+        return True
+
+
+class 항상휴장:
+    def is_open(self, now):
+        return False
+
+
+def new_runner(strategy=None, symbols=("005930",), history=None, market_hours=None):
     return SignalRunner(strategy or 항상매수(), list(symbols),
                         api_url="http://localhost:8080/api/signals",
-                        history=history)
+                        history=history,
+                        market_hours=market_hours or 항상장중())
 
 
 def feed(runner, messages):
@@ -348,6 +361,107 @@ def test_전략이_터져도_러너는_계속_돈다():
              trade_msg(price=200, ts="2026-09-11T13:46:00+09:00"),   # 여기서 전략이 터진다
              trade_msg(price=300, ts="2026-09-11T13:47:00+09:00")])
     assert len(r.bars["005930"].closed) == 2
+
+
+# ---------------------------------------------------------------- 정규장 필터
+
+def test_시간외_체결은_봉에_들어가지_않는다():
+    """가장 중요한 케이스. 시간외단일가 체결이 분봉을 오염시키면 안 된다."""
+    fake = FakeRequests()
+    original = swap_requests(fake)
+    try:
+        r = new_runner(market_hours=항상휴장())
+        feed(r, [trade_msg(price=100, ts="2026-09-11T17:16:00+09:00"),
+                 trade_msg(price=200, ts="2026-09-11T17:17:00+09:00")])
+        assert r.bars["005930"].closed == [], "시간외 체결이 봉으로 들어갔다"
+        assert fake.calls == [], "시간외 체결에서 신호가 나갔다"
+    finally:
+        runner_mod.requests = original
+
+
+def test_정규장_체결은_평소대로_들어간다():
+    """필터가 정상 구간까지 막아버리면 러너가 통째로 죽은 것과 같다."""
+    fake = FakeRequests()
+    original = swap_requests(fake)
+    try:
+        r = new_runner(market_hours=항상장중())
+        feed(r, [trade_msg(price=100, ts="2026-09-11T13:45:00+09:00"),
+                 trade_msg(price=200, ts="2026-09-11T13:46:00+09:00")])
+        assert len(r.bars["005930"].closed) == 1
+        assert len(fake.calls) == 1
+    finally:
+        runner_mod.requests = original
+
+
+def test_장마감_경계에서_뒤쪽_체결만_버린다():
+    """정규장 종료 시각을 지나면 그 뒤 체결만 버리고, 앞 봉은 남는다."""
+    class 세시반마감:
+        def is_open(self, now):
+            return now < datetime(2026, 9, 11, 15, 30, tzinfo=KST)
+
+    fake = FakeRequests()
+    original = swap_requests(fake)
+    try:
+        r = new_runner(market_hours=세시반마감())
+        feed(r, [trade_msg(price=100, ts="2026-09-11T15:28:00+09:00"),
+                 trade_msg(price=200, ts="2026-09-11T15:29:00+09:00"),   # 15:28봉이 닫힌다
+                 trade_msg(price=999, ts="2026-09-11T17:16:00+09:00")])  # 시간외 — 버려짐
+        closed = r.bars["005930"].closed
+        assert len(closed) == 1 and closed[0]["close"] == 100
+        assert all(c["json"]["price"] != 999 for c in fake.calls), \
+            "시간외 가격으로 신호가 나갔다"
+    finally:
+        runner_mod.requests = original
+
+
+def test_MarketHours는_하루에_한_번만_조회한다():
+    """체결마다 네트워크를 타면 API 한 번 실패가 웹소켓 루프를 죽인다."""
+    calls = []
+
+    class 가짜세션:
+        def is_open(self, now):
+            return True
+
+    def fetch():
+        calls.append(1)
+        return 가짜세션()
+
+    mh = runner_mod.MarketHours(fetch=fetch)
+    base = datetime(2026, 9, 11, 13, 45, tzinfo=KST)
+    for i in range(50):
+        mh.is_open(base + timedelta(seconds=i))
+    assert len(calls) == 1, f"조회가 {len(calls)}번 일어났다"
+
+    mh.is_open(base + timedelta(days=1))       # 날짜가 바뀌면 다시 조회
+    assert len(calls) == 2
+
+
+def test_MarketHours는_조회_실패하면_닫힌_것으로_본다():
+    """장 구간을 모르는 채 신호를 내보내는 것보다 안 내보내는 쪽이 안전하다."""
+    def 터지는fetch():
+        raise RuntimeError("토스 API가 죽었다")
+
+    mh = runner_mod.MarketHours(fetch=터지는fetch)
+    assert mh.is_open(datetime(2026, 9, 11, 13, 45, tzinfo=KST)) is False
+
+
+def test_MarketHours는_휴장이면_닫힌_것으로_본다():
+    mh = runner_mod.MarketHours(fetch=lambda: None)      # 휴장일엔 get_session이 None
+    assert mh.is_open(datetime(2026, 9, 11, 13, 45, tzinfo=KST)) is False
+
+
+def test_MarketHours_조회_실패해도_매_틱마다_재시도하지_않는다():
+    calls = []
+
+    def 터지는fetch():
+        calls.append(1)
+        raise RuntimeError("죽었다")
+
+    mh = runner_mod.MarketHours(fetch=터지는fetch)
+    base = datetime(2026, 9, 11, 13, 45, tzinfo=KST)
+    for i in range(30):
+        mh.is_open(base + timedelta(seconds=i))
+    assert len(calls) == 1, f"실패 후 {len(calls)}번 재시도했다"
 
 
 def test_워밍업_DB가_없으면_빈_프레임을_준다():

@@ -227,6 +227,66 @@ def post_signal(url: str, payload: dict) -> bool:
     return True
 
 
+# ---------------------------------------------------------------- 정규장 판정
+
+class MarketHours:
+    """
+    정규장(09:00~15:30) 구간을 하루 한 번만 조회해 캐시한다.
+
+    **왜 필요한가:** 토스는 정규장이 끝난 뒤에도 시간외단일가 체결을 계속
+    흘려보낸다. 그걸 그대로 분봉으로 접으면 정규장 봉과 성질이 전혀 다른
+    데이터가 된다 — 시간외단일가는 10분 단위 단일가라 체결이 뜨문뜨문
+    찍히고, 그 사이 봉들은 거래량 0이거나 아예 비어 있다. 전략은 정규장
+    분봉으로 백테스트한 것인데 그런 봉 위에서 신호를 내면, 그 신호는 한
+    번도 검증된 적 없는 입력에 대한 출력이다.
+
+    paper/broker.py가 같은 이유로 시간외 주문을 거부한다("정규장에만 주문할
+    수 있습니다"). 러너에만 이 제한이 없으면 브로커는 거부할 주문을 러너는
+    신호로 내보내는 모순이 생긴다.
+
+    **왜 하드코딩(09:00~15:30)이 아니라 API인가:** 휴장일과 조기 폐장이
+    있다. 시간만 비교하면 공휴일 내내 "장중"으로 판정한다. 이미 toss.py에
+    장 구간을 받아오는 get_session()이 있고 broker.py가 Session.is_open()을
+    쓰고 있으므로 그대로 재사용한다.
+
+    **왜 캐시하는가:** get_session()은 네트워크를 탄다. 이 판정은 체결
+    프린트마다 불리는 자리인데, 거기서 네트워크를 타면 API가 한 번
+    실패할 때 예외가 웹소켓 루프를 뚫고 나가 연결이 끊기고 재접속마다 같은
+    자리에서 또 죽는다. CLAUDE.md가 tz_now()에 대해 경고하는 바로 그
+    실패 모양이다. 그래서 날짜가 바뀔 때만 조회하고, 조회 자체도 예외를
+    밖으로 내보내지 않는다.
+
+    **못 알아내면 닫힌 것으로 본다(fail closed).** 장 구간을 모르는 채로
+    신호를 내보내는 것보다 안 내보내는 쪽이 안전하다. 다만 조용히 멈추면
+    "왜 신호가 안 나지"를 알 수 없으므로 억제할 때마다 WARNING을 남긴다.
+    """
+
+    def __init__(self, fetch=None):
+        # 기본값을 여기서 import하는 이유: paper.toss는 data.auth를 통해
+        # 토큰을 끌고 오는데, 테스트는 가짜 fetch를 넣어 네트워크 없이
+        # 돌아야 한다. 모듈 최상단에서 import하면 테스트가 토큰 경로를
+        # 건드리게 된다.
+        if fetch is None:
+            from paper import toss
+            fetch = toss.get_session
+        self._fetch = fetch
+        self._date = None          # 캐시된 날짜 (KST 기준 date)
+        self._session = None       # Session | None (None = 휴장이거나 조회 실패)
+
+    def is_open(self, now: datetime) -> bool:
+        today = now.astimezone(KST).date()
+        if self._date != today:
+            self._date = today     # 실패해도 날짜는 갱신한다. 안 그러면 매 틱마다 재시도한다.
+            try:
+                self._session = self._fetch()
+            except Exception:
+                self._session = None
+                log.exception("장 구간 조회 실패 — 오늘은 신호를 내보내지 않는다")
+        if self._session is None:
+            return False
+        return self._session.is_open(now)
+
+
 # ---------------------------------------------------------------- 러너
 
 class SignalRunner:
@@ -241,12 +301,16 @@ class SignalRunner:
     """
 
     def __init__(self, strategy, symbols: list[str], api_url: str,
-                 history: dict | None = None):
+                 history: dict | None = None, market_hours=None):
         self.strategy = strategy
         self.name = type(strategy).__name__
         self.api_url = api_url
         self.bars = {s: MinuteBars() for s in symbols}
         self.history = history or {}          # {종목코드: 과거 분봉 DataFrame}
+        self.market_hours = market_hours or MarketHours()
+        # 시간외 체결을 버릴 때마다 로그를 찍으면 장 마감 후 수십 건이 쏟아진다.
+        # 구간이 바뀔 때 한 번만 알리려고 직전 상태를 들고 있는다.
+        self._was_open = None
 
     def handle_message(self, raw) -> None:
         """
@@ -268,6 +332,24 @@ class SignalRunner:
         bars = self.bars.get(trade["stockCode"])
         if bars is None:
             return                     # 구독하지 않은 종목. Kotlin이 더 보내도 무시한다.
+
+        # **정규장 체결만 봉에 넣는다.** 막는 자리를 '신호 전송'이 아니라
+        # '틱 투입'으로 잡은 이유: 시간외 체결이 일단 봉에 들어가면 그 봉의
+        # 고가·저가·거래량이 이미 오염되고, 그 오염된 봉은 다음 정규장까지
+        # 프레임에 남아 워밍업 구간의 지표값을 끌고 다닌다. 신호만 막으면
+        # 오늘 신호는 안 나가지만 내일 신호가 틀린 지표 위에서 나온다.
+        # 입구에서 막으면 한 군데로 끝난다.
+        if not self.market_hours.is_open(trade["timestamp"]):
+            if self._was_open is not False:
+                log.warning("정규장 밖 체결이라 버린다 (%s %s) — 시간외단일가는 "
+                            "체결 규칙이 달라 분봉으로 접으면 전략 입력이 오염된다",
+                            trade["stockCode"], trade["timestamp"])
+                self._was_open = False
+            return
+        if self._was_open is not True:
+            log.info("정규장 구간 진입 — 체결 수집 시작")
+            self._was_open = True
+
         closed = bars.add(trade["price"], trade["volume"], trade["timestamp"])
         if closed is not None:
             self._on_bar_closed(trade["stockCode"], closed)
