@@ -5,6 +5,10 @@
 실시간 시세를 받아 가짜 돈으로 매매하고, 56개 전략을 과거 데이터로 검증하고,
 검증한 전략을 실시간으로 돌려 신호가 나면 화면에 알린다. **실매매 코드는 없다.**
 
+> **왜 이렇게 생겼는지**는 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)에 있다.
+> 프로세스를 둘로 나눈 이유, 둘이 주고받는 계약, 넘지 않는 선이 적혀 있다.
+> 코드를 고치기 전에 읽으면 같은 함정을 두 번 파지 않는다.
+
 ![모의투자 매매 화면](research/docs/screenshots/trading.jpg)
 ![실시간 호가 화면](research/docs/screenshots/orderbook.jpg)
 
@@ -17,13 +21,16 @@
 ```
 toss/
 ├── .env                시크릿 (양쪽이 공유, gitignore)
-├── market_data.db      캔들 저장소 (324MB, gitignore)
+├── market_data.db      캔들 저장소 (gitignore — 직접 수집해야 한다)
+├── docs/
+│   └── ARCHITECTURE.md 설계 문서
 │
 ├── server/             Kotlin + Spring Boot  ── 실시간 게이트웨이
 │   └── :8080           토스 웹소켓을 물고, 재연결하고, 팬아웃한다
 │
 └── research/           Python  ── 리서치
-    └── :8000           전략 · 백테스트 · 캔들 수집 · 모의투자 웹앱
+    ├── :8000           전략 · 백테스트 · 캔들 수집 · 모의투자 웹앱
+    └── CLAUDE.md       파이썬 쪽 세부 규칙과 함정
 ```
 
 | | server (Kotlin) | research (Python) |
@@ -56,6 +63,21 @@ TOSS_CLIENT_SECRET=발급받은_client_secret
 Kotlin은 `auth/EnvFile.kt`가 실행 위치에서 위로 거슬러 올라가며 찾고,
 파이썬은 `data/auth.py`가 `python-dotenv`로 읽는다. 토큰은 양쪽 다 자동 발급·캐시한다
 (만료 60초 전 갱신).
+
+### 4. 캔들 수집 — 백테스트 전에 반드시
+
+**`market_data.db`는 저장소에 없다.** 용량 때문에 `.gitignore` 대상이라 새 환경에서는
+직접 받아야 한다. 이게 없으면 백테스트는 빈 데이터로 돌고, 시그널 러너는
+"워밍업 0봉" 경고를 찍으며 지표가 시드에 끌려다닌다.
+
+```bash
+cd research
+python -m data.candles --kospi50 --interval 1d    # 먼저 이것부터. 몇 분이면 끝난다
+python -m data.candles --kospi50 --interval 1m    # 1시간 이상 걸린다
+```
+
+**일봉을 먼저 받는 것을 권한다.** 1975년까지 올라가고, 전략 검증의 검정력은 거의 전부
+일봉에서 나온다. 1분봉은 종목당 거래일이 28일뿐이라 검정력이 약하다.
 
 ### 파이썬
 
@@ -223,6 +245,9 @@ python -m data.candles --kospi50 --interval 1d       # 일봉 (몇 분이면 끝
 `market_data.db` (SQLite, gitignore). 테이블 `candles`, PK `(ticker, timeframe, timestamp)`.
 `INSERT OR IGNORE` 증분이라 **재실행해도 안전하다.**
 
+**저장소에는 이 파일이 없다.** 클론한 직후에는 위 명령으로 직접 받아야 한다.
+데이터를 커밋하지 않는 정책이라 그렇고, 백업도 없다 — 한 번 날리면 다시 받는 수밖에 없다.
+
 > **토스 API가 429를 자주 던진다.** 실측으로 50종목 중 17종목이 rate limit으로
 > 실패했다. `update_multiple`에 재시도가 없어서 한 번에 다 못 받는다.
 > 수집이 증분이니 실패한 종목만 다시 돌리면 된다.
@@ -325,11 +350,18 @@ cd ../server && ./gradlew test             # Kotlin 18건
 - **큐 포지션을 모델링하지 않는다.** 지정가가 실제보다 잘 체결된다.
 - **그날 마지막 봉이 닫히지 않는다.** `signal_runner`는 타이머 없이
   "다음 분의 첫 틱"으로 봉을 닫는다. 거래 없는 분에 빈 봉이 생기는 것보다 낫다고 봤다.
+- **호가 이력이 없다.** `orderbook:kr`을 실시간으로 받지만 흘려보내고 버린다.
+  `market_data.db`에는 `candles` 테이블 하나뿐이라, `strategies/microstructure/`는
+  호가 데이터 없이 봉 모양으로 근사한 대용치다.
 - **H2 경로가 상대경로다.** `jdbc:h2:file:./data/paper`라서 실행 위치에 따라
   DB가 갈린다. gradle로 띄우면 `server/data/`에 생긴다.
 - **`backtest.results`를 일봉으로 돌리면 안 된다.** 캐시 단위가 '거래일'이라
   일봉에서는 행 하나가 봉 하나다. 분봉 대비 약 230배가 된다.
 - **수집 재시도가 없다.** 429가 나면 그 종목은 그냥 실패한다.
+- **`signal_runner`가 `paper/toss.py`에 의존한다.** 정규장 필터가 `get_session()`을
+  재사용하면서 생겼다. 장 구간은 시장 메타데이터라 원래는 `data/`에 있는 게 맞다.
+- **모의투자가 둘이다.** Kotlin `trade/`(262줄)와 파이썬 `paper/`(1,680줄)가 겹친다.
+  파이썬 쪽이 훨씬 정교하고, Kotlin 쪽은 Spring 연습 결과물이다. 합칠지 미정.
 
 ---
 

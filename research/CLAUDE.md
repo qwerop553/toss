@@ -2,9 +2,11 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+**이 문서는 `research/`(파이썬) 범위다.** 저장소 전체 설계 — 프로세스를 둘로 나눈 이유, Kotlin 쪽과 주고받는 계약, 넘지 않는 선 — 은 [../docs/ARCHITECTURE.md](../docs/ARCHITECTURE.md)에 있다. 구조에 손대기 전에 그쪽을 먼저 읽어라.
+
 ## What this is
 
-토스증권 OpenAPI 기반 한국 주식 **모의투자 웹사이트**(`paper/`)와, 전략을 검증하는 분봉 **백테스팅 하네스**(`backtest/`). 중심은 모의투자 쪽이다. 실매매(live) 코드는 없고, 넣어서도 안 된다 — 아래 `paper/` 절의 sandbox 부재 경고를 읽어라.
+토스증권 OpenAPI 기반 한국 주식 **모의투자 웹사이트**(`paper/`)와, 전략을 검증하는 분봉 **백테스팅 하네스**(`backtest/`), 그리고 전략을 실시간으로 돌려 신호를 Kotlin 서버로 쏘는 **시그널 러너**(`paper/signal_runner.py`). 실매매(live) 코드는 없고, 넣어서도 안 된다 — 아래 `paper/` 절의 sandbox 부재 경고를 읽어라.
 
 ```
 toss/
@@ -194,7 +196,7 @@ Citadel은 수식을 하나도 공개한 적이 없다(WorldQuant와 다른 점�
 
 **캐시 무효화**: 행마다 전략 소스 + `indicators.py` + `base.py` + `backtest/engine.py`의 mtime 최댓값(`fp`)을 박아 둔다. 코드를 고치면 그 전략의 행만 버려지고 다시 계산된다. 스키마를 바꿀 때는 `SCHEMA_VERSION`을 올리면 테이블이 통째로 재생성된다.
 
-**`backtest/results.py`를 일봉으로 돌리지 마라.** 캐시 단위가 '거래일'이라 1분봉에서는 행 하나가 390봉을 요약하지만 일봉에서는 행 하나가 봉 하나다. 현재 1분봉 전량이 68,678행에 151MB인데, 일봉(49종목 × 6,377일 × 51전략)이면 약 1,600만 행 — 230배다. 일봉 검증은 `backtest/run.py --interval 1d`나 별도 스크립트로 하고, results.py는 분봉 전용으로 둬라.
+**`backtest/results.py`를 일봉으로 돌리지 마라.** 캐시 단위가 '거래일'이라 1분봉에서는 행 하나가 390봉을 요약하지만 일봉에서는 행 하나가 봉 하나다. 현재 캐시가 `daily` 83,496행에 250MB인데, 일봉(49종목 × 6,377일 × 56전략)이면 약 1,750만 행 — 200배가 넘는다. 일봉 검증은 `backtest/run.py --interval 1d`나 별도 스크립트로 하고, results.py는 분봉 전용으로 둬라.
 
 출력은 `results.db`(기계용, gitignore 대상), `results/report.md`(전략 순위 + 상위 5개 상세), `results/detail.csv`(전 조합). 실측: 2종목 × 41전략 콜드 37초 → 웜 6초. 전량(41전략 × 50종목 = 2050조합) 콜드 약 17분 → 웜 238초.
 
@@ -233,9 +235,42 @@ Citadel은 수식을 하나도 공개한 적이 없다(WorldQuant와 다른 점�
 
 전략 쪽 테스트도 같은 형식이다: `python strategies/tests/test_session_alpha.py` (세션 기반 전략 5개의 lookahead·오버나잇 검사), `python strategies/tests/test_formulaic.py` (WorldQuant 알파의 연산자 손계산 대조 + lookahead·워밍업 검사), `python strategies/tests/test_microstructure.py` (미시구조 추정량 손계산 대조 + 신호가 실제로 나는지).
 
+## 시그널 파이프라인 (`paper/signal_runner.py`)
+
+전략을 실시간으로 돌려 신호가 나면 Kotlin 서버(`server/`)로 쏜다. 서버가 검증·보관한 뒤 브라우저에 배너를 띄운다. **전체 설계와 계약 스펙은 [../docs/ARCHITECTURE.md](../docs/ARCHITECTURE.md)에 있다.** 여기서는 파이썬 쪽 규칙만 적는다.
+
+```bash
+python -m paper.signal_runner EmaCrossStrategy --ticker 005930 [--warmup 300] [--server localhost:8080]
+```
+
+**토스에 직접 붙지 않는다.** 업스트림 웹소켓이 계정당 2개뿐이라 서버 하나만 붙고, 러너는 서버의 `/ws`를 구독해 체결을 받는다. 그래서 이 러너는 실시간 경로에 토큰이 필요 없다 — 워밍업 캔들을 읽는 REST 경로에만 필요하다. **`paper/feed.py`를 쓰지 않는다**(그건 `app.py` 전용이다).
+
+**정규장 체결만 봉에 넣는다.** 막는 자리가 '신호 전송'이 아니라 '틱 투입'인 것이 핵심이다. 시간외 체결이 일단 봉에 들어가면 그 봉의 고가·저가·거래량이 오염되고, 그 봉은 다음 정규장까지 프레임에 남아 워밍업 구간의 지표를 끌고 다닌다. 신호만 막으면 오늘은 막히지만 **내일 신호가 틀린 지표 위에서 난다.**
+
+**`MarketHours`가 장 구간을 하루 한 번만 조회한다.** `toss.get_session()`은 네트워크를 타는데, 이 판정은 체결 프린트마다 불리는 자리다. 거기서 네트워크를 타면 API 한 번 실패가 웹소켓 루프를 뚫고 나가 연결이 끊기고 재접속마다 같은 자리에서 또 죽는다 — `tz_now()`에 대해 위에서 경고한 그 실패 모양이다. 조회에 실패하면 **닫힌 것으로 보되(fail closed) 매번 로그를 남긴다.** 조용히 신호가 안 나가는 상태가 가장 알아채기 어렵다.
+
+**봉은 타이머가 아니라 '다음 분의 첫 틱'으로 닫는다.** 타이머를 쓰면 거래 없는 분에 빈 봉이 생겨 전략 입력에 없던 봉이 끼고, 이벤트 루프에 태스크가 하나 더 붙는다. 대가는 그날 마지막 봉이 안 닫히는 것이다.
+
+**매 봉마다 프레임을 통째로 다시 만들고 전략도 처음부터 돌린다.** 지표가 ewm/rolling이라 앞이 바뀌면 뒤가 바뀌고, 무엇보다 백테스트와 **같은 코드로 같은 숫자**가 나와야 한다. 그래서 중복 신호를 막는 상태를 따로 들고 있지 않다 — `to_signals`의 상태머신이 매번 처음부터 도니 마지막 봉의 값이 곧 '이번 봉의 사건'이고, 봉 하나를 한 번씩만 평가하므로 같은 신호가 두 번 안 나간다.
+
+**예외를 밖으로 내보내지 않는다.** 전략이 터져도, 서버가 꺼져 있어도, POST가 400을 받아도 로그만 남기고 계속 돈다. 러너에서 가장 위험한 실패는 시세 루프가 멈추는 것이다.
+
+**`paper/toss.py`에 의존한다** — `get_session()` 때문이다. 장 구간은 모의투자 로직이 아니라 시장 메타데이터라 원래는 `data/`에 있는 게 맞다. `paper/`를 정리할 일이 생기면 이 이사가 먼저다.
+
+테스트: `python paper/tests/test_signal_runner.py` (29건, 네트워크 없이 돈다).
+
 ## 데이터
 
-`market_data.db` (SQLite, gitignore 대상, 현재 245MB — 코스피50 전 종목 1분봉). 테이블 `candles`, PK `(ticker, timeframe, timestamp)` — `INSERT OR IGNORE` 증분 수집이라 재실행해도 안전하다. **1분봉은 코스피50 전 종목이 있지만 종목당 거래일이 28일뿐이고, 일봉(49종목)은 1975년까지 올라간다.** 전략 검증의 검정력은 거의 전부 일봉에서 나온다 — `python -m data.candles --kospi50 --interval 1d`는 1분봉 수집과 달리 몇 분이면 끝난다. `timestamp`는 TEXT로 저장되고 `load_candles`가 읽을 때 datetime으로 파싱한다.
+> **지금 `market_data.db`가 없다.** 2026-09-11 작업 중 소실됐고 백업이 없다. 백테스트나 워밍업을 돌리기 전에 아래 수집 명령을 먼저 실행해라. 없는 채로 돌리면 백테스트는 빈 프레임을 받고, 시그널 러너는 "워밍업 0봉" 경고를 찍으며 지표가 시드에 끌려다니는 값으로 신호를 낸다 — **터지지 않고 조용히 틀린다.**
+>
+> ```bash
+> python -m data.candles --kospi50 --interval 1d    # 먼저. 몇 분
+> python -m data.candles --kospi50 --interval 1m    # 1시간 이상
+> ```
+
+`market_data.db` (SQLite, gitignore 대상, 저장소 루트 — 패키지 바깥이다. `data/candles.py`의 `DEFAULT_DB_PATH`가 이름이 아니라 단계 수로 찾는다). 테이블 `candles`, PK `(ticker, timeframe, timestamp)` — `INSERT OR IGNORE` 증분 수집이라 재실행해도 안전하다. **1분봉은 종목당 거래일이 28일뿐이고, 일봉은 1975년까지 올라간다.** 전략 검증의 검정력은 거의 전부 일봉에서 나온다 — `--interval 1d`는 1분봉 수집과 달리 몇 분이면 끝난다. `timestamp`는 TEXT로 저장되고 `load_candles`가 읽을 때 datetime으로 파싱한다.
+
+**데이터는 커밋하지 않고 백업도 없다.** 한 번 날리면 다시 받는 수밖에 없고, 1분봉은 429 때문에 한 번에 다 못 받는다. 오래 모은 수집물이 생기면 저장소 밖에 사본을 두는 편이 낫다.
 
 `data/auth.py`가 `.env`의 `TOSS_CLIENT_ID` / `TOSS_CLIENT_SECRET`으로 토큰을 자동 발급·캐시한다 (만료 60초 전 갱신). 토큰 401이 아니라 **IP 미등록**으로 실패하는 경우가 많다.
 
